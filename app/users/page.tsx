@@ -1,72 +1,95 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { mockUsers } from "@/lib/mock-data"
-import { Search, Plus } from "lucide-react"
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, Plus, X } from "lucide-react";
+import { userApi } from "@/lib/api/userApi";
+import { User, PaginatedResponse } from "@/lib/types/api";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res: PaginatedResponse<User> = await userApi.getUsers(
+        currentPage,
+        itemsPerPage,
+        appliedSearchTerm, // Pass applied search term to the backend
+      );
+
+      setUsers(res.results);
+      setTotalPages(res.totalPages);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      // Handle specific errors like authentication or network issues
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, appliedSearchTerm]);
 
   useEffect(() => {
-    // Simulate API call
-    const fetchUsers = async () => {
-      setLoading(true)
-      try {
-        // In a real app, this would be an API call
-        setTimeout(() => {
-          setUsers(mockUsers)
-          setLoading(false)
-        }, 1000)
-      } catch (error) {
-        console.error("Error fetching users:", error)
-        setLoading(false)
-      }
-    }
+    fetchUsers();
+  }, [fetchUsers]); // Dependency array includes fetchUsers which changes when its dependencies (like appliedSearchTerm) change
 
-    fetchUsers()
-  }, [])
+  const handleApplySearch = () => {
+    setCurrentPage(1); // Reset to page 1 when search is applied
+    setAppliedSearchTerm(searchTerm); // Apply the search term, triggers fetchUsers
+  };
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const resetSearch = () => {
+    setSearchTerm("");
+    setAppliedSearchTerm(""); // Reset applied search term, triggers fetchUsers
+    setCurrentPage(1); // Reset to page 1
+  };
 
-  // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem)
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
-
+  // Define handlePageChange function here
   const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber)
-  }
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+    setCurrentPage(pageNumber);
+  };
+
 
   return (
     <div className="space-y-4">
       <Card className="border-none shadow-sm bg-white/70">
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-3 justify-between">
-            <div className="relative flex-1">
+            <div className="relative flex-1 flex items-center">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-white border-gray-200 focus-visible:ring-teal-500 rounded-full"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleApplySearch();
+                  }
+                }}
+                className="pl-9 bg-white border-gray-200 focus-visible:ring-teal-500 rounded-full flex-grow"
               />
+               <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleApplySearch}
+                  className="ml-2 h-9 text-xs border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-full"
+               >
+                  Search
+               </Button>
             </div>
             <Link href="/users/new">
               <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs h-9 px-3 flex items-center gap-1">
@@ -75,6 +98,19 @@ export default function UsersPage() {
               </Button>
             </Link>
           </div>
+
+          {appliedSearchTerm && (
+            <div className="flex flex-wrap gap-2 mt-3">
+               <Badge
+                 variant="outline"
+                 className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
+               >
+                 Search: "{appliedSearchTerm}"
+                 <X className="h-3 w-3 cursor-pointer" onClick={resetSearch} />
+               </Badge>
+            </div>
+          )}
+
         </CardContent>
       </Card>
 
@@ -83,14 +119,14 @@ export default function UsersPage() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-medium text-gray-700 font-playfair">
               Users
-              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{filteredUsers.length}</Badge>
+              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{users.length}</Badge> {/* Note: This badge shows count for the current page */}
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="p-4 space-y-4">
-              {Array.from({ length: 5 }).map((_, index) => (
+              {Array.from({ length: itemsPerPage }).map((_, index) => (
                 <div key={index} className="flex items-center space-x-4">
                   <Skeleton className="h-12 w-12 rounded-full" />
                   <div className="space-y-2">
@@ -100,6 +136,10 @@ export default function UsersPage() {
                 </div>
               ))}
             </div>
+          ) : users.length === 0 ? (
+             <div className="text-center py-8 text-gray-500">
+                No users found matching the criteria. Try adjusting your search.
+             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
@@ -114,47 +154,38 @@ export default function UsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {currentUsers.length > 0 ? (
-                      currentUsers.map((user) => (
-                        <TableRow key={user.id} className="hover:bg-gray-50/80 border-b border-gray-100">
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <Badge
-                              className={
-                                user.role === "ADMIN" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"
-                              }
+                    {users.map((user) => (
+                      <TableRow key={user.id} className="hover:bg-gray-50/80 border-b border-gray-100">
+                        <TableCell className="font-medium">{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              user.role === "ADMIN" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"
+                            }
+                          >
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/users/${user.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
                             >
-                              {user.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">
-                            <Link href={`/users/${user.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
-                              >
-                                View Details
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                          No users found. Try adjusting your search.
+                              View Details
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
 
-              {/* Pagination */}
-              {filteredUsers.length > itemsPerPage && (
+              {totalPages > 1 && (
                 <div className="flex justify-center py-4 border-t border-gray-100">
                   <div className="flex space-x-1">
                     <Button
@@ -198,5 +229,5 @@ export default function UsersPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
