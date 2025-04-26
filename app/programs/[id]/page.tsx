@@ -1,75 +1,79 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockPrograms, mockEnrollments, mockClients } from "@/lib/mock-data"
-import { ProgramStatsChart } from "@/components/program-stats-chart"
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProgramStatsChart } from "@/components/program-stats-chart";
+import { programApi } from "@/lib/api/programApi";
+import { enrollmentApi } from "@/lib/api/enrollmentApi";
+import { HealthProgram, Enrollment, Client } from "@/lib/types/api";
 
 export default function ProgramDetailsPage() {
-  const { id } = useParams()
-  const [program, setProgram] = useState<any>(null)
-  const [enrollments, setEnrollments] = useState<any[]>([])
-  const [enrolledClients, setEnrolledClients] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { id } = useParams() as { id: string };
+  const [program, setProgram] = useState<HealthProgram | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [enrolledClients, setEnrolledClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
     completed: 0,
     dropped: 0,
-  })
+  });
+
+  const fetchProgramData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const programResponse = await programApi.getProgram(id);
+      setProgram(programResponse);
+
+      const enrollmentsResponse = await enrollmentApi.getEnrollments(
+        1, // page
+        1000, 
+        undefined, 
+        id, // programId filter
+        undefined // status
+      );
+      const programEnrollments = enrollmentsResponse.results;
+      setEnrollments(programEnrollments);
+
+      const clientsMap = new Map<string, Client>();
+      programEnrollments.forEach(enrollment => {
+        if (enrollment.client) {
+          clientsMap.set(enrollment.client.id, enrollment.client);
+        }
+      });
+      setEnrolledClients(Array.from(clientsMap.values()));
+
+      const active = programEnrollments.filter((e) => e.status === "active").length;
+      const completed = programEnrollments.filter((e) => e.status === "completed").length;
+      const dropped = programEnrollments.filter((e) => e.status === "dropped").length;
+
+      setStats({
+        total: programEnrollments.length,
+        active,
+        completed,
+        dropped,
+      });
+
+    } catch (error) {
+      console.error("Error fetching program data:", error);
+      setProgram(null); 
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    // Simulate API call
-    const fetchProgramData = async () => {
-      setLoading(true)
-      try {
-        // In a real app, these would be API calls
-        setTimeout(() => {
-          const foundProgram = mockPrograms.find((p) => p.id === id)
-
-          if (foundProgram) {
-            setProgram(foundProgram)
-
-            // Get enrollments for this program
-            const programEnrollments = mockEnrollments.filter((e) => e.programId === id)
-            setEnrollments(programEnrollments)
-
-            // Get enrolled clients
-            const clientIds = [...new Set(programEnrollments.map((e) => e.clientId))]
-            const clients = mockClients.filter((c) => clientIds.includes(c.id))
-            setEnrolledClients(clients)
-
-            // Calculate stats
-            const active = programEnrollments.filter((e) => e.status === "active").length
-            const completed = programEnrollments.filter((e) => e.status === "completed").length
-            const dropped = programEnrollments.filter((e) => e.status === "dropped").length
-
-            setStats({
-              total: programEnrollments.length,
-              active,
-              completed,
-              dropped,
-            })
-          }
-
-          setLoading(false)
-        }, 1000)
-      } catch (error) {
-        console.error("Error fetching program data:", error)
-        setLoading(false)
-      }
-    }
-
     if (id) {
-      fetchProgramData()
+      fetchProgramData();
     }
-  }, [id])
+  }, [id, fetchProgramData]);
 
   if (loading) {
     return (
@@ -91,7 +95,7 @@ export default function ProgramDetailsPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!program) {
@@ -103,7 +107,7 @@ export default function ProgramDetailsPage() {
           <Button className="bg-teal-600 hover:bg-teal-700">Return to Programs</Button>
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -195,81 +199,88 @@ export default function ProgramDetailsPage() {
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="all" className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-700">
-                All Clients
+                All Clients ({enrolledClients.length})
               </TabsTrigger>
               <TabsTrigger
                 value="active"
                 className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700"
               >
-                Active
+                Active ({stats.active})
               </TabsTrigger>
               <TabsTrigger
                 value="inactive"
                 className="data-[state=active]:bg-amber-100 data-[state=active]:text-amber-700"
               >
-                Inactive
+                Inactive ({stats.dropped + stats.completed})
               </TabsTrigger>
             </TabsList>
 
-            {["all", "active", "inactive"].map((status) => (
-              <TabsContent key={status} value={status} className="space-y-4">
-                {enrolledClients.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">No clients enrolled in this program.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {enrolledClients.map((client) => {
-                      const clientEnrollment = enrollments.find((e) => e.clientId === client.id)
-                      const isActive = clientEnrollment?.status === "active"
+            {["all", "active", "inactive"].map((status) => {
+              const filteredClients = enrolledClients.filter(client => {
+                const clientEnrollment = enrollments.find(e => e.clientId === client.id);
+                if (status === "all") return true;
+                if (status === "active") return clientEnrollment?.status === "active";
+                if (status === "inactive") return clientEnrollment?.status === "completed" || clientEnrollment?.status === "dropped";
+                return false; // Should not happen
+              });
 
-                      // Filter based on tab
-                      if (status === "active" && !isActive) return null
-                      if (status === "inactive" && isActive) return null
+              return (
+                <TabsContent key={status} value={status} className="space-y-4">
+                  {filteredClients.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">No clients found with this status in this program.</div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredClients.map((client) => {
+                        const clientEnrollment = enrollments.find((e) => e.clientId === client.id);
 
-                      return (
-                        <Card key={client.id} className="border-teal-100">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-medium text-blue-700">{client.fullName}</h3>
-                              <Badge
-                                className={
-                                  clientEnrollment?.status === "active"
-                                    ? "bg-green-100 text-green-700"
-                                    : clientEnrollment?.status === "completed"
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-amber-100 text-amber-700"
-                                }
-                              >
-                                {clientEnrollment?.status || "unknown"}
-                              </Badge>
-                            </div>
-                            <div className="text-sm text-gray-500 mb-2">
-                              Enrolled:{" "}
-                              {clientEnrollment
-                                ? new Date(clientEnrollment.enrolledAt).toLocaleDateString()
-                                : "Unknown"}
-                            </div>
-                            <div className="flex justify-end mt-2">
-                              <Link href={`/clients/${client.id}`}>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                        return (
+                          <Card key={client.id} className="border-teal-100">
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <h3 className="font-medium text-blue-700">{client.fullName}</h3>
+                                <Badge
+                                  className={
+                                    clientEnrollment?.status === "active"
+                                      ? "bg-green-100 text-green-700"
+                                      : clientEnrollment?.status === "completed"
+                                        ? "bg-blue-100 text-blue-700"
+                                        : clientEnrollment?.status === "dropped"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : "bg-gray-100 text-gray-700"
+                                  }
                                 >
-                                  View Client
-                                </Button>
-                              </Link>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                  </div>
-                )}
-              </TabsContent>
-            ))}
+                                  {clientEnrollment?.status || "unknown"}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-gray-500 mb-2">
+                                Enrolled:{" "}
+                                {clientEnrollment
+                                  ? new Date(clientEnrollment.enrolledAt).toLocaleDateString()
+                                  : "Unknown"}
+                              </div>
+                              <div className="flex justify-end mt-2">
+                                <Link href={`/clients/${client.id}`}>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                  >
+                                    View Client
+                                  </Button>
+                                </Link>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </TabsContent>
+              );
+            })}
           </Tabs>
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+} 
