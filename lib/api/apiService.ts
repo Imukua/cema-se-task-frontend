@@ -1,7 +1,8 @@
 import { TokenStore } from "../auth/tokenStore";
 import type { TokenResponse, UserRefreshToken } from "../types/api";
 
-const API_BASE_URL = "http://localhost:3001/v1";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 interface ApiOptions {
   method?: string;
@@ -88,7 +89,7 @@ export const apiService = {
       throw createApiError(
         errorData.message || "An error occurred",
         response.status,
-        errorData,
+        errorData
       );
     } catch (error) {
       // Re-throw API errors or wrap other errors
@@ -120,7 +121,7 @@ export const apiService = {
           body: refreshData,
           isProtected: false,
           isRefreshRequest: true,
-        },
+        }
       );
 
       // Store the new tokens
@@ -138,7 +139,7 @@ export const apiService = {
 function createApiError(
   message: string,
   status?: number,
-  data?: any,
+  data?: any
 ): ApiError {
   const error = new Error(message) as ApiError;
   error.status = status;
