@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { mockUsers, mockClients } from "@/lib/mock-data"
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import {
   User,
   Mail,
@@ -23,43 +23,79 @@ import {
   Settings,
   Key,
   BarChart3,
-} from "lucide-react"
-import { DoctorActivityTimeline } from "@/components/doctor-activity-timeline"
+} from "lucide-react";
 
-export default function DoctorProfilePage() {
-  const { id } = useParams()
-  const [user, setUser] = useState<any>(null)
-  const [assignedClients, setAssignedClients] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("overview")
+import { ProgramStatsChart } from "@/components/program-stats-chart"; // Assuming this component is general
+import { DoctorActivityTimeline } from "@/components/doctor-activity-timeline"; // Assuming this component might use internal or static data
+
+import { userApi } from "@/lib/api/userApi";
+// Assuming a clientApi exists with a getClients method that accepts userId
+import { clientApi } from "@/lib/api/clientApi";
+import { User as UserType, Client as ClientType } from "@/lib/types/api"; // Use specific names to avoid conflict
+
+export default function UserDetailsPage() { // Renamed component for clarity
+  const { id } = useParams() as { id: string };
+  const [user, setUser] = useState<UserType | null>(null);
+  const [assignedClients, setAssignedClients] = useState<ClientType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const fetchUserData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch user details
+      const userResponse = await userApi.getUser(id);
+      setUser(userResponse);
+
+      // Fetch clients assigned to this user
+      // Assuming clientApi.getClients exists and supports filtering by userId
+      // Using a large limit to fetch all assigned clients for display and count
+      // In a production app with many clients per user, this would need pagination in the UI.
+      const clientsResponse = await clientApi.getClients(
+        1, // page
+        1000, // limit - assuming a large limit is sufficient
+        undefined, // search
+        id // userId filter
+      );
+      setAssignedClients(clientsResponse.results);
+
+      // Note: Enrollment stats, Active Programs count, and Success Rate are
+      // not available from the provided user or client APIs.
+      // The activity timeline is also not API-backed in the provided code.
+
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      setUser(null); // Set user to null if fetching fails (e.g., user not found)
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
-    // Simulate API call
-    const fetchUserData = async () => {
-      setLoading(true)
-      try {
-        // In a real app, these would be API calls
-        setTimeout(() => {
-          const foundUser = mockUsers.find((u) => u.id === id)
-          if (foundUser) {
-            setUser(foundUser)
-
-            // Get clients assigned to this doctor
-            const userClients = mockClients.filter((c) => c.userId === id)
-            setAssignedClients(userClients)
-          }
-          setLoading(false)
-        }, 1000)
-      } catch (error) {
-        console.error("Error fetching user data:", error)
-        setLoading(false)
-      }
-    }
-
     if (id) {
-      fetchUserData()
+      fetchUserData();
     }
-  }, [id])
+  }, [id, fetchUserData]);
+
+  // Generate initials from user name (still needed as UI element)
+  const getInitials = (name: string | undefined) => {
+      if (!name) return "";
+      return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase();
+  };
+
+  // Note: activityTimeline is still using mock/placeholder data as no API is available
+  const activityTimeline = [
+     { id: "1", type: "login", date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), title: "Logged into the system" },
+     { id: "2", type: "client", date: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), title: "Added new client: Sarah Miller", clientName: "Sarah Miller" },
+     { id: "3", type: "enrollment", date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), title: "Created enrollment for John Smith", clientName: "John Smith", programName: "Diabetes Management" },
+     { id: "4", type: "update", date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), title: "Updated client information for Michael Johnson", clientName: "Michael Johnson" },
+     { id: "5", type: "login", date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), title: "Logged into the system" },
+  ];
+
 
   if (loading) {
     return (
@@ -87,7 +123,7 @@ export default function DoctorProfilePage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!user) {
@@ -99,55 +135,9 @@ export default function DoctorProfilePage() {
           <Button className="bg-teal-600 hover:bg-teal-700">Return to Users</Button>
         </Link>
       </div>
-    )
+    );
   }
 
-  // Generate initials from user name
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-  }
-
-  // Create mock activity timeline data
-  const activityTimeline = [
-    {
-      id: "1",
-      type: "login",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      title: "Logged into the system",
-    },
-    {
-      id: "2",
-      type: "client",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-      title: "Added new client: Sarah Miller",
-      clientName: "Sarah Miller",
-    },
-    {
-      id: "3",
-      type: "enrollment",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      title: "Created enrollment for John Smith",
-      clientName: "John Smith",
-      programName: "Diabetes Management",
-    },
-    {
-      id: "4",
-      type: "update",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
-      title: "Updated client information for Michael Johnson",
-      clientName: "Michael Johnson",
-    },
-    {
-      id: "5",
-      type: "login",
-      date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), // 3 days ago
-      title: "Logged into the system",
-    },
-  ]
 
   return (
     <div className="space-y-6">
@@ -158,7 +148,8 @@ export default function DoctorProfilePage() {
               <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
           </Link>
-          <h1 className="page-title text-teal-700">Doctor Profile</h1>
+          {/* Assuming the page title should be "User Profile" or similar */}
+          <h1 className="page-title text-teal-700">User Profile</h1>
         </div>
         <Link href={`/users/${id}/edit`}>
           <Button className="bg-teal-600 hover:bg-teal-700">
@@ -168,7 +159,7 @@ export default function DoctorProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Doctor Summary Card */}
+        {/* User Summary Card */}
         <Card className="bg-white/90 border-none shadow-sm lg:col-span-4">
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
@@ -216,6 +207,7 @@ export default function DoctorProfilePage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Account Status</p>
+                      {/* Assuming account status is always active based on mock */}
                       <p className="text-sm font-medium">Active</p>
                     </div>
                   </div>
@@ -228,7 +220,7 @@ export default function DoctorProfilePage() {
         {/* Main Content Area */}
         <div className="lg:col-span-3 space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6"> {/* Adjust grid-cols if adding more tabs */}
               <TabsTrigger
                 value="overview"
                 className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-700"
@@ -239,13 +231,14 @@ export default function DoctorProfilePage() {
                 value="clients"
                 className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
               >
-                Assigned Clients
+                Assigned Clients ({assignedClients.length})
               </TabsTrigger>
+               {/* Activity tab - requires API */}
               <TabsTrigger
-                value="activity"
-                className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-700"
+                 value="activity"
+                 className="data-[state=active]:bg-teal-100 data-[state=active]:text-teal-700"
               >
-                Activity
+                 Activity (Placeholder)
               </TabsTrigger>
             </TabsList>
 
@@ -254,7 +247,7 @@ export default function DoctorProfilePage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="card-title text-base text-gray-700 flex items-center">
                     <FileText className="h-4 w-4 mr-2 text-blue-600" />
-                    Doctor Information
+                    User Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -296,6 +289,7 @@ export default function DoctorProfilePage() {
                           {new Date(user.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
+                       {/* Assigned Clients count repeated here for emphasis */}
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
                           <Users className="h-4 w-4 mr-1 text-gray-400" /> Assigned Clients
@@ -307,30 +301,35 @@ export default function DoctorProfilePage() {
                 </CardContent>
               </Card>
 
+               {/* Performance Overview Card - simplified as not all data is API backed */}
               <Card className="bg-white/90 border-none shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="card-title text-base text-gray-700 flex items-center">
-                    <BarChart3 className="h-4 w-4 mr-2 text-blue-600" />
-                    Performance Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-md text-center">
-                      <p className="text-3xl font-bold text-blue-700">{assignedClients.length}</p>
-                      <p className="text-xs text-blue-600 mt-1">Total Clients</p>
-                    </div>
-                    <div className="bg-teal-50 p-4 rounded-md text-center">
-                      <p className="text-3xl font-bold text-teal-700">12</p>
-                      <p className="text-xs text-teal-600 mt-1">Active Programs</p>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-md text-center">
-                      <p className="text-3xl font-bold text-blue-700">85%</p>
-                      <p className="text-xs text-blue-600 mt-1">Success Rate</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                 <CardHeader className="pb-2">
+                   <CardTitle className="card-title text-base text-gray-700 flex items-center">
+                     <BarChart3 className="h-4 w-4 mr-2 text-blue-600" />
+                     Performance Overview (Limited Data)
+                   </CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <div className="bg-blue-50 p-4 rounded-md text-center">
+                       <p className="text-3xl font-bold text-blue-700">{assignedClients.length}</p>
+                       <p className="text-xs text-blue-600 mt-1">Total Clients</p>
+                     </div>
+                     {/* Active Programs and Success Rate removed - requires more APIs */}
+                     {/*
+                     <div className="bg-teal-50 p-4 rounded-md text-center">
+                       <p className="text-3xl font-bold text-teal-700">?</p>
+                       <p className="text-xs text-teal-600 mt-1">Active Programs</p>
+                     </div>
+                     <div className="bg-blue-50 p-4 rounded-md text-center">
+                       <p className="text-3xl font-bold text-blue-700">?</p>
+                       <p className="text-xs text-blue-600 mt-1">Success Rate</p>
+                     </div>
+                     */}
+                   </div>
+                 </CardContent>
+               </Card>
+
             </TabsContent>
 
             <TabsContent value="clients" className="space-y-6">
@@ -338,12 +337,12 @@ export default function DoctorProfilePage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="card-title text-base text-gray-700 flex items-center">
                     <Users className="h-4 w-4 mr-2 text-blue-600" />
-                    Assigned Clients
+                    Assigned Clients ({assignedClients.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {assignedClients.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">No clients assigned to this doctor.</div>
+                    <div className="text-center py-8 text-gray-500">No clients assigned to this user.</div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {assignedClients.map((client) => (
@@ -351,7 +350,8 @@ export default function DoctorProfilePage() {
                           <CardContent className="p-4">
                             <div className="flex justify-between items-start mb-2">
                               <h3 className="font-medium text-blue-700">{client.fullName}</h3>
-                              <Badge className="bg-teal-100 text-teal-700">{client.programs.length} Programs</Badge>
+                              {/* Assuming client.programs exists and is an array */}
+                              <Badge className="bg-teal-100 text-teal-700">{client.programs?.length || 0} Programs</Badge>
                             </div>
                             <div className="flex items-center text-xs text-gray-500 mb-2">
                               <Calendar className="h-3 w-3 mr-1" />
@@ -387,11 +387,13 @@ export default function DoctorProfilePage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="card-title text-base text-gray-700 flex items-center">
                     <Clock className="h-4 w-4 mr-2 text-teal-600" />
-                    Recent Activity
+                    Recent Activity (Placeholder)
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                   {/* This component would need an API to fetch real user activity */}
                   <DoctorActivityTimeline activities={activityTimeline} />
+                  <p className="text-center text-sm text-gray-500 mt-4">Activity data shown is static placeholder data as no API is available.</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -408,7 +410,7 @@ export default function DoctorProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Link href={`/clients/new?doctorId=${user.id}`}>
+              <Link href={`/clients/new?userId=${user.id}`}> {/* Assuming userId param for new client */}
                 <Button className="w-full bg-teal-600 hover:bg-teal-700 text-xs h-8 justify-start">
                   <Users className="h-3.5 w-3.5 mr-2" /> Add New Client
                 </Button>
@@ -418,6 +420,7 @@ export default function DoctorProfilePage() {
                   <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Profile
                 </Button>
               </Link>
+              {/* Print Profile button - functionality not implemented */}
               <Button variant="outline" className="w-full border-gray-200 text-gray-700 text-xs h-8 justify-start">
                 <FileText className="h-3.5 w-3.5 mr-2" /> Print Profile
               </Button>
@@ -428,24 +431,26 @@ export default function DoctorProfilePage() {
             <CardHeader className="pb-2">
               <CardTitle className="card-title text-base text-gray-700 flex items-center">
                 <Key className="h-4 w-4 mr-2 text-teal-600" />
-                Account Security
+                Account Security (Static Data)
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
+                 {/* These are static data as no API is available */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Password Status</span>
                   <Badge className="bg-green-100 text-green-700">Strong</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Last Password Change</span>
-                  <span className="text-sm text-gray-700">30 days ago</span>
+                  <span className="text-sm text-gray-700">30 days ago</span> {/* Static */}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Two-Factor Auth</span>
-                  <Badge className="bg-amber-100 text-amber-700">Disabled</Badge>
+                  <Badge className="bg-amber-100 text-amber-700">Disabled</Badge> {/* Static */}
                 </div>
                 <div className="pt-2">
+                  {/* Change Password button - functionality not implemented */}
                   <Button variant="outline" size="sm" className="w-full border-blue-200 text-blue-600 text-xs">
                     <Key className="h-3.5 w-3.5 mr-2" /> Change Password
                   </Button>
@@ -456,5 +461,5 @@ export default function DoctorProfilePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
