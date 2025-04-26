@@ -1,125 +1,147 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { mockEnrollments, mockClients, mockPrograms } from "@/lib/mock-data"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { format, isAfter, isBefore } from "date-fns"
-import { Search, Plus, Filter, X, CalendarIcon } from "lucide-react"
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, isAfter, isBefore, endOfDay, startOfDay } from "date-fns";
+import { Search, Plus, Filter, X, CalendarIcon } from "lucide-react";
+import { enrollmentApi } from "@/lib/api/enrollmentApi";
+import { programApi } from "@/lib/api/programApi";
+import { Enrollment, HealthProgram, PaginatedResponse } from "@/lib/types/api";
 
 export default function EnrollmentsPage() {
-  const [enrollments, setEnrollments] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter states
-  const [statusFilter, setStatusFilter] = useState<string | null>(null)
-  const [programFilter, setProgramFilter] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState<string | undefined>(undefined);
+  const [appliedProgramFilter, setAppliedProgramFilter] = useState<string | undefined>(undefined);
+
+  const [frontendFilteredEnrollments, setFrontendFilteredEnrollments] = useState<Enrollment[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
+
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [programFilter, setProgramFilter] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<{
-    from: Date | null
-    to: Date | null
+    from: Date | undefined;
+    to: Date | undefined;
   }>({
-    from: null,
-    to: null,
-  })
-  const [showFilters, setShowFilters] = useState(false)
+    from: undefined,
+    to: undefined,
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  const [programs, setPrograms] = useState<HealthProgram[]>([]);
+
+  const fetchEnrollments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res: PaginatedResponse<Enrollment> = await enrollmentApi.getEnrollments(
+        currentPage,
+        itemsPerPage,
+        undefined,
+        appliedProgramFilter,
+        appliedStatusFilter as "active" | "completed" | "dropped" | undefined
+      );
+
+      setEnrollments(res.results);
+      setTotalPages(res.totalPages);
+    } catch (error) {
+      console.error("Error fetching enrollments:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, appliedStatusFilter, appliedProgramFilter]);
+
+
+  const fetchPrograms = useCallback(async () => {
+    try {
+      const res = await programApi.getPrograms();
+      setPrograms(res.results);
+    } catch (error) {
+      console.error("Error loading programs:", error);
+    }
+  }, []);
 
   useEffect(() => {
-    // Simulate API call
-    const fetchEnrollments = async () => {
-      setLoading(true)
-      try {
-        // In a real app, this would be an API call
-        setTimeout(() => {
-          // Combine enrollment data with client and program data
-          const enrichedEnrollments = mockEnrollments.map((enrollment) => {
-            const client = mockClients.find((c) => c.id === enrollment.clientId)
-            const program = mockPrograms.find((p) => p.id === enrollment.programId)
+    fetchEnrollments();
+  }, [fetchEnrollments]);
 
-            return {
-              ...enrollment,
-              client,
-              program,
-            }
-          })
+  useEffect(() => {
+    fetchPrograms();
+  }, [fetchPrograms]);
 
-          setEnrollments(enrichedEnrollments)
-          setLoading(false)
-        }, 1000)
-      } catch (error) {
-        console.error("Error fetching enrollments:", error)
-        setLoading(false)
+  useEffect(() => {
+    const filtered = enrollments.filter((enrollment) => {
+      const matchesSearch =
+        (enrollment.client?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (enrollment.healthProgram?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+
+      let matchesDateRange = true;
+      if (dateRange.from) {
+        matchesDateRange = matchesDateRange && isAfter(new Date(enrollment.enrolledAt), startOfDay(dateRange.from));
       }
-    }
+      if (dateRange.to) {
+        matchesDateRange = matchesDateRange && isBefore(new Date(enrollment.enrolledAt), endOfDay(dateRange.to));
+      }
 
-    fetchEnrollments()
-  }, [])
+      return matchesSearch && matchesDateRange;
+    });
+    setFrontendFilteredEnrollments(filtered);
+  }, [enrollments, searchTerm, dateRange]);
 
-  // Filter enrollments based on search term and filters
-  const filteredEnrollments = enrollments.filter((enrollment) => {
-    // Search filter
-    const matchesSearch =
-      enrollment.client?.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      false ||
-      enrollment.program?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      false
+  const handleApplyFilters = () => {
+    setCurrentPage(1);
+    setAppliedStatusFilter(statusFilter === null || statusFilter === "all" ? undefined : statusFilter);
+    setAppliedProgramFilter(programFilter === null || programFilter === "all" ? undefined : programFilter);
 
-    // Status filter
-    const matchesStatus = !statusFilter || enrollment.status === statusFilter
-
-    // Program filter
-    const matchesProgram = !programFilter || enrollment.programId === programFilter
-
-    // Date range filter
-    let matchesDateRange = true
-    if (dateRange.from) {
-      matchesDateRange = matchesDateRange && isAfter(new Date(enrollment.enrolledAt), new Date(dateRange.from))
-    }
-    if (dateRange.to) {
-      matchesDateRange = matchesDateRange && isBefore(new Date(enrollment.enrolledAt), new Date(dateRange.to))
-    }
-
-    return matchesSearch && matchesStatus && matchesProgram && matchesDateRange
-  })
-
-  // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentEnrollments = filteredEnrollments.slice(indexOfFirstItem, indexOfLastItem)
-  const totalPages = Math.ceil(filteredEnrollments.length / itemsPerPage)
+    setShowFilters(false);
+  };
 
   const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber)
-  }
+    if (pageNumber < 1 || pageNumber > totalPages) return;
+    setCurrentPage(pageNumber);
+  };
 
   const resetFilters = () => {
-    setStatusFilter(null)
-    setProgramFilter(null)
-    setDateRange({ from: null, to: null })
-  }
+    setStatusFilter(null);
+    setProgramFilter(null);
+    setDateRange({ from: undefined, to: undefined });
+    setSearchTerm("");
+
+    setAppliedStatusFilter(undefined);
+    setAppliedProgramFilter(undefined);
+
+    setCurrentPage(1);
+  };
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-700"
+        return "bg-green-100 text-green-700";
       case "completed":
-        return "bg-blue-100 text-blue-700"
+        return "bg-blue-100 text-blue-700";
       case "dropped":
-        return "bg-amber-100 text-amber-700"
+        return "bg-amber-100 text-amber-700";
       default:
-        return "bg-gray-100 text-gray-700"
+        return "bg-gray-100 text-gray-700";
     }
-  }
+  };
+
+  const displayEnrollments = frontendFilteredEnrollments;
+
+  const currentEnrollmentsOnPage = displayEnrollments;
 
   return (
     <div className="space-y-4">
@@ -146,7 +168,7 @@ export default function EnrollmentsPage() {
                     <Filter className="h-3.5 w-3.5" />
                     Filters
                     <Badge className="ml-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
-                      {(statusFilter ? 1 : 0) + (programFilter ? 1 : 0) + (dateRange.from || dateRange.to ? 1 : 0)}
+                      {(appliedStatusFilter ? 1 : 0) + (appliedProgramFilter ? 1 : 0) + (dateRange.from || dateRange.to ? 1 : 0) + (searchTerm ? 1 : 0)}
                     </Badge>
                   </Button>
                 </PopoverTrigger>
@@ -193,7 +215,7 @@ export default function EnrollmentsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All programs</SelectItem>
-                          {mockPrograms.map((program) => (
+                          {programs.map((program) => (
                             <SelectItem key={program.id} value={program.id}>
                               {program.name}
                             </SelectItem>
@@ -219,7 +241,7 @@ export default function EnrollmentsPage() {
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
-                              selected={dateRange.from || undefined}
+                              selected={dateRange.from}
                               onSelect={(date) => setDateRange((prev) => ({ ...prev, from: date }))}
                               initialFocus
                             />
@@ -240,7 +262,7 @@ export default function EnrollmentsPage() {
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
                               mode="single"
-                              selected={dateRange.to || undefined}
+                              selected={dateRange.to}
                               onSelect={(date) => setDateRange((prev) => ({ ...prev, to: date }))}
                               initialFocus
                             />
@@ -255,7 +277,7 @@ export default function EnrollmentsPage() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => setShowFilters(false)}
+                        onClick={handleApplyFilters}
                         className="text-xs h-8 bg-teal-600 hover:bg-teal-700"
                       >
                         Apply Filters
@@ -274,26 +296,35 @@ export default function EnrollmentsPage() {
             </div>
           </div>
 
-          {/* Active filters display */}
-          {(statusFilter || programFilter || dateRange.from || dateRange.to) && (
+          {(appliedStatusFilter || appliedProgramFilter || dateRange.from || dateRange.to || searchTerm) && (
             <div className="flex flex-wrap gap-2 mt-3">
-              {statusFilter && (
+              {searchTerm && (
+                 <Badge
+                   variant="outline"
+                   className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
+                 >
+                   Search: "{searchTerm}"
+                   <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchTerm("")} />
+                 </Badge>
+              )}
+
+              {appliedStatusFilter && (
                 <Badge
                   variant="outline"
                   className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
                 >
-                  Status: {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setStatusFilter(null)} />
+                  Status: {appliedStatusFilter.charAt(0).toUpperCase() + appliedStatusFilter.slice(1)}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => { setAppliedStatusFilter(undefined); setStatusFilter(null); setCurrentPage(1); }} />
                 </Badge>
               )}
 
-              {programFilter && (
+              {appliedProgramFilter && (
                 <Badge
                   variant="outline"
                   className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
                 >
-                  Program: {mockPrograms.find((p) => p.id === programFilter)?.name}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setProgramFilter(null)} />
+                  Program: {programs.find((p) => p.id === appliedProgramFilter)?.name || "Unknown Program"}
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => { setAppliedProgramFilter(undefined); setProgramFilter(null); setCurrentPage(1); }} />
                 </Badge>
               )}
 
@@ -304,18 +335,20 @@ export default function EnrollmentsPage() {
                 >
                   Date: {dateRange.from ? format(dateRange.from, "PP") : "Any"} -{" "}
                   {dateRange.to ? format(dateRange.to, "PP") : "Any"}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setDateRange({ from: null, to: null })} />
+                  <X className="h-3 w-3 cursor-pointer" onClick={() => setDateRange({ from: undefined, to: undefined })} />
                 </Badge>
               )}
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetFilters}
-                className="text-xs h-6 px-2 text-gray-500 hover:text-gray-700"
-              >
-                Clear all
-              </Button>
+              {(appliedStatusFilter || appliedProgramFilter || dateRange.from || dateRange.to || searchTerm) && (
+                 <Button
+                   variant="ghost"
+                   size="sm"
+                   onClick={resetFilters}
+                   className="text-xs h-6 px-2 text-gray-500 hover:text-gray-700"
+                 >
+                   Clear all
+                 </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -326,14 +359,14 @@ export default function EnrollmentsPage() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-medium text-gray-700">
               Enrollments
-              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{filteredEnrollments.length}</Badge>
+              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{frontendFilteredEnrollments.length}</Badge>
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
             <div className="p-4 space-y-4">
-              {Array.from({ length: 5 }).map((_, index) => (
+              {Array.from({ length: itemsPerPage }).map((_, index) => (
                 <div key={index} className="flex items-center space-x-4">
                   <Skeleton className="h-12 w-12 rounded-full" />
                   <div className="space-y-2">
@@ -343,6 +376,10 @@ export default function EnrollmentsPage() {
                 </div>
               ))}
             </div>
+          ) : displayEnrollments.length === 0 ? (
+             <div className="text-center py-8 text-gray-500">
+                No enrollments found matching the criteria. Try adjusting your search or filters.
+             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
@@ -357,57 +394,46 @@ export default function EnrollmentsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {currentEnrollments.length > 0 ? (
-                      currentEnrollments.map((enrollment) => (
-                        <TableRow key={enrollment.id} className="hover:bg-gray-50/80 border-b border-gray-100">
-                          <TableCell>
-                            <Link
-                              href={`/clients/${enrollment.clientId}`}
-                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                            >
-                              {enrollment.client?.fullName || "Unknown Client"}
-                            </Link>
-                          </TableCell>
-                          <TableCell>
-                            <Link
-                              href={`/programs/${enrollment.programId}`}
-                              className="text-teal-600 hover:text-teal-800 hover:underline"
-                            >
-                              {enrollment.program?.name || "Unknown Program"}
-                            </Link>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${getStatusBadgeClass(enrollment.status)} text-xs`}>
-                              {enrollment.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{new Date(enrollment.enrolledAt).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">
-                            <Link href={`/enrollments/${enrollment.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
-                              >
-                                View Details
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                          No enrollments found. Try adjusting your search or filters.
+                    {currentEnrollmentsOnPage.map((enrollment) => (
+                      <TableRow key={enrollment.id} className="hover:bg-gray-50/80 border-b border-gray-100">
+                        <TableCell>
+                          <Link
+                            href={`/clients/${enrollment.clientId}`}
+                            className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {enrollment.client?.fullName || "Unknown Client"}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/programs/${enrollment.programId}`}
+                            className="text-teal-600 hover:text-teal-800 hover:underline"
+                          >
+                            {enrollment.healthProgram?.name || "Unknown Program"}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${getStatusBadgeClass(enrollment.status)} text-xs`}>
+                            {enrollment.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(enrollment.enrolledAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
+                                >
+                              View Details
+                            </Button>
                         </TableCell>
                       </TableRow>
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
 
-              {/* Pagination */}
-              {filteredEnrollments.length > itemsPerPage && (
+              {totalPages > 1 && (
                 <div className="flex justify-center py-4 border-t border-gray-100">
                   <div className="flex space-x-1">
                     <Button
@@ -451,5 +477,5 @@ export default function EnrollmentsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
