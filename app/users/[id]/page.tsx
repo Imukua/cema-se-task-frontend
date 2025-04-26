@@ -25,33 +25,48 @@ import {
   BarChart3,
 } from "lucide-react";
 
-import { ProgramStatsChart } from "@/components/program-stats-chart"; // Assuming this component is general
-import { DoctorActivityTimeline } from "@/components/doctor-activity-timeline"; // Assuming this component might use internal or static data
+// Assuming these components exist and are relevant for the view page
+import { ProgramStatsChart } from "@/components/program-stats-chart";
+import { DoctorActivityTimeline } from "@/components/doctor-activity-timeline";
 
 import { userApi } from "@/lib/api/userApi";
 // Assuming a clientApi exists with a getClients method that accepts userId
 import { clientApi } from "@/lib/api/clientApi";
-import { User as UserType, Client as ClientType } from "@/lib/types/api"; // Use specific names to avoid conflict
+import { User as UserType, Client as ClientType, PaginatedResponse } from "@/lib/types/api";
 
-export default function UserDetailsPage() { // Renamed component for clarity
+// Import useAuth hook
+import { useAuth } from "@/lib/auth/AuthContext";
+
+// Helper function to format dates
+const formatDate = (dateString: string) => {
+    try {
+        return new Date(dateString).toLocaleDateString();
+    } catch (e) {
+        return "N/A"; // Handle invalid dates
+    }
+};
+
+
+export default function UserDetailsPage() {
   const { id } = useParams() as { id: string };
-  const [user, setUser] = useState<UserType | null>(null);
+  const { user: loggedInUser, isLoading: isAuthLoading } = useAuth(); // Get logged-in user details
+
+  // Removed console.log({ loggedInUser, viewedUserId: id });
+
+  const [viewedUser, setViewedUser] = useState<UserType | null>(null); // State for the user being viewed
   const [assignedClients, setAssignedClients] = useState<ClientType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true); // Combined loading for user and clients
   const [activeTab, setActiveTab] = useState("overview");
 
-  const fetchUserData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async () => {
+    setLoadingData(true);
     try {
-      // Fetch user details
+      // Fetch the user whose page is being viewed
       const userResponse = await userApi.getUser(id);
-      setUser(userResponse);
+      setViewedUser(userResponse);
 
       // Fetch clients assigned to this user
-      // Assuming clientApi.getClients exists and supports filtering by userId
-      // Using a large limit to fetch all assigned clients for display and count
-      // In a production app with many clients per user, this would need pagination in the UI.
-      const clientsResponse = await clientApi.getClients(
+      const clientsResponse: PaginatedResponse<ClientType> = await clientApi.getClients(
         1, // page
         1000, // limit - assuming a large limit is sufficient
         undefined, // search
@@ -65,19 +80,21 @@ export default function UserDetailsPage() { // Renamed component for clarity
 
     } catch (error) {
       console.error("Error fetching user data:", error);
-      setUser(null); // Set user to null if fetching fails (e.g., user not found)
+      setViewedUser(null); // Set user to null if fetching fails (e.g., user not found)
+       // Optionally clear assigned clients if fetching user failed
+      setAssignedClients([]);
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   }, [id]);
 
   useEffect(() => {
     if (id) {
-      fetchUserData();
+      fetchData();
     }
-  }, [id, fetchUserData]);
+  }, [id, fetchData]);
 
-  // Generate initials from user name (still needed as UI element)
+  // Generate initials from user name
   const getInitials = (name: string | undefined) => {
       if (!name) return "";
       return name
@@ -88,6 +105,7 @@ export default function UserDetailsPage() { // Renamed component for clarity
   };
 
   // Note: activityTimeline is still using mock/placeholder data as no API is available
+  // This should ideally be fetched from a backend API
   const activityTimeline = [
      { id: "1", type: "login", date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), title: "Logged into the system" },
      { id: "2", type: "client", date: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), title: "Added new client: Sarah Miller", clientName: "Sarah Miller" },
@@ -96,8 +114,11 @@ export default function UserDetailsPage() { // Renamed component for clarity
      { id: "5", type: "login", date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(), title: "Logged into the system" },
   ];
 
+  // Determine if the edit button and quick actions should be enabled
+  const canEdit = loggedInUser && (loggedInUser.role === "ADMIN" || loggedInUser.id === id);
 
-  if (loading) {
+
+  if (loadingData || isAuthLoading) { // Show loading skeleton if user data or auth is loading
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -122,11 +143,20 @@ export default function UserDetailsPage() { // Renamed component for clarity
             </div>
           </CardContent>
         </Card>
+         {/* Skeleton for tabs content area */}
+         <Skeleton className="h-64 w-full" />
+         {/* Skeleton for sidebar area */}
+         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+             <div className="lg:col-start-4 space-y-6">
+                 <Skeleton className="h-32 w-full" /> {/* Quick Actions Skeleton */}
+                 <Skeleton className="h-40 w-full" /> {/* Account Security Skeleton */}
+             </div>
+         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!viewedUser) { // Check if the viewed user data is null after loading
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <h1 className="text-2xl font-bold text-red-600 mb-4">User Not Found</h1>
@@ -148,11 +178,11 @@ export default function UserDetailsPage() { // Renamed component for clarity
               <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
           </Link>
-          {/* Assuming the page title should be "User Profile" or similar */}
           <h1 className="page-title text-teal-700">User Profile</h1>
         </div>
-        <Link href={`/users/${id}/edit`}>
-          <Button className="bg-teal-600 hover:bg-teal-700">
+        {/* Always render the Edit Profile button Link, but disable the Button and prevent pointer events if cannotEdit */}
+        <Link href={`/users/${id}/edit`} style={{ pointerEvents: canEdit ? 'auto' : 'none' }}>
+          <Button className="bg-teal-600 hover:bg-teal-700" disabled={!canEdit}>
             <Pencil className="h-4 w-4 mr-1" /> Edit Profile
           </Button>
         </Link>
@@ -164,20 +194,20 @@ export default function UserDetailsPage() { // Renamed component for clarity
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               <Avatar className="h-20 w-20 bg-blue-100 text-blue-700 text-xl">
-                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                <AvatarFallback>{getInitials(viewedUser.name)}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-800 font-playfair">{user.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 font-playfair">{viewedUser.name}</h2>
                     <div className="flex items-center gap-2 text-gray-500 mt-1">
                       <Mail className="h-4 w-4" />
-                      <span>{user.email}</span>
+                      <span>{viewedUser.email}</span>
                       <span className="text-gray-300">•</span>
                       <Badge
-                        className={user.role === "ADMIN" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"}
+                        className={viewedUser.role === "ADMIN" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"}
                       >
-                        {user.role}
+                        {viewedUser.role}
                       </Badge>
                     </div>
                   </div>
@@ -198,7 +228,7 @@ export default function UserDetailsPage() { // Renamed component for clarity
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Member Since</p>
-                      <p className="text-sm font-medium">{new Date(user.createdAt).toLocaleDateString()}</p>
+                      <p className="text-sm font-medium">{formatDate(viewedUser.createdAt)}</p> {/* Use helper */}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -257,19 +287,19 @@ export default function UserDetailsPage() { // Renamed component for clarity
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
                           <User className="h-4 w-4 mr-1 text-gray-400" /> Full Name
                         </h3>
-                        <p className="text-base font-medium text-blue-700">{user.name}</p>
+                        <p className="text-base font-medium text-blue-700">{viewedUser.name}</p>
                       </div>
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
                           <Mail className="h-4 w-4 mr-1 text-gray-400" /> Email Address
                         </h3>
-                        <p className="text-base font-medium text-blue-700">{user.email}</p>
+                        <p className="text-base font-medium text-blue-700">{viewedUser.email}</p>
                       </div>
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
                           <Shield className="h-4 w-4 mr-1 text-gray-400" /> Role
                         </h3>
-                        <p className="text-base font-medium text-blue-700">{user.role}</p>
+                        <p className="text-base font-medium text-blue-700">{viewedUser.role}</p>
                       </div>
                     </div>
                     <div className="space-y-4">
@@ -278,7 +308,7 @@ export default function UserDetailsPage() { // Renamed component for clarity
                           <Calendar className="h-4 w-4 mr-1 text-gray-400" /> Created Date
                         </h3>
                         <p className="text-base font-medium text-blue-700">
-                          {new Date(user.createdAt).toLocaleDateString()}
+                          {formatDate(viewedUser.createdAt)} {/* Use helper */}
                         </p>
                       </div>
                       <div>
@@ -286,7 +316,7 @@ export default function UserDetailsPage() { // Renamed component for clarity
                           <Clock className="h-4 w-4 mr-1 text-gray-400" /> Last Updated
                         </h3>
                         <p className="text-base font-medium text-blue-700">
-                          {new Date(user.updatedAt).toLocaleDateString()}
+                          {formatDate(viewedUser.updatedAt)} {/* Use helper */}
                         </p>
                       </div>
                        {/* Assigned Clients count repeated here for emphasis */}
@@ -316,16 +346,6 @@ export default function UserDetailsPage() { // Renamed component for clarity
                        <p className="text-xs text-blue-600 mt-1">Total Clients</p>
                      </div>
                      {/* Active Programs and Success Rate removed - requires more APIs */}
-                     {/*
-                     <div className="bg-teal-50 p-4 rounded-md text-center">
-                       <p className="text-3xl font-bold text-teal-700">?</p>
-                       <p className="text-xs text-teal-600 mt-1">Active Programs</p>
-                     </div>
-                     <div className="bg-blue-50 p-4 rounded-md text-center">
-                       <p className="text-3xl font-bold text-blue-700">?</p>
-                       <p className="text-xs text-blue-600 mt-1">Success Rate</p>
-                     </div>
-                     */}
                    </div>
                  </CardContent>
                </Card>
@@ -355,10 +375,10 @@ export default function UserDetailsPage() { // Renamed component for clarity
                             </div>
                             <div className="flex items-center text-xs text-gray-500 mb-2">
                               <Calendar className="h-3 w-3 mr-1" />
-                              <span>Added: {new Date(client.createdAt).toLocaleDateString()}</span>
+                              <span>Added: {formatDate(client.createdAt)}</span> {/* Use helper */}
                             </div>
                             {client.notes && (
-                              <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 italic line-clamp-2">
+                              <div className="mt-2 p-2 bg-gray-500/10 rounded text-xs text-gray-600 italic line-clamp-2">
                                 "{client.notes}"
                               </div>
                             )}
@@ -402,62 +422,73 @@ export default function UserDetailsPage() { // Renamed component for clarity
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="bg-white/90 border-none shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="card-title text-base text-gray-700 flex items-center">
-                <Settings className="h-4 w-4 mr-2 text-blue-600" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href={`/clients/new?userId=${user.id}`}> {/* Assuming userId param for new client */}
-                <Button className="w-full bg-teal-600 hover:bg-teal-700 text-xs h-8 justify-start">
-                  <Users className="h-3.5 w-3.5 mr-2" /> Add New Client
-                </Button>
-              </Link>
-              <Link href={`/users/${id}/edit`}>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-8 justify-start">
-                  <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Profile
-                </Button>
-              </Link>
-              {/* Print Profile button - functionality not implemented */}
-              <Button variant="outline" className="w-full border-gray-200 text-gray-700 text-xs h-8 justify-start">
-                <FileText className="h-3.5 w-3.5 mr-2" /> Print Profile
-              </Button>
-            </CardContent>
-          </Card>
+           {/* Quick Actions Card - always render, but disable buttons and pointer events if cannotEdit */}
+           <Card className={`bg-white/90 border-none shadow-sm ${!canEdit ? 'opacity-50 pointer-events-none' : ''}`}>
+               <CardHeader className="pb-2">
+                 <CardTitle className="card-title text-base text-gray-700 flex items-center">
+                   <Settings className="h-4 w-4 mr-2 text-blue-600" />
+                   Quick Actions
+                 </CardTitle>
+               </CardHeader>
+               <CardContent className="space-y-2">
+                 {/* Add New Client button - disabled if cannotEdit */}
+                 {viewedUser && ( // Ensure viewedUser exists before linking
+                   <Link href={`/clients/new?userId=${viewedUser.id}`} style={{ pointerEvents: canEdit ? 'auto' : 'none' }}>
+                     <Button className="w-full bg-teal-600 hover:bg-teal-700 text-xs h-8 justify-start" disabled={!canEdit}>
+                       <Users className="h-3.5 w-3.5 mr-2" /> Add New Client for This User
+                     </Button>
+                   </Link>
+                 )}
+                 {/* Edit Profile button inside Quick Actions - disabled if cannotEdit */}
+                 <Link href={`/users/${id}/edit`} style={{ pointerEvents: canEdit ? 'auto' : 'none' }}>
+                   <Button className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-8 justify-start" disabled={!canEdit}>
+                     <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Profile
+                   </Button>
+                 </Link>
+                 {/* Print Profile button - functionality not implemented, disabled if cannotEdit */}
+                 <Button variant="outline" className="w-full border-gray-200 text-gray-700 text-xs h-8 justify-start" disabled={!canEdit}>
+                   <FileText className="h-3.5 w-3.5 mr-2" /> Print Profile
+                 </Button>
+               </CardContent>
+           </Card>
 
-          <Card className="bg-white/90 border-none shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="card-title text-base text-gray-700 flex items-center">
-                <Key className="h-4 w-4 mr-2 text-teal-600" />
-                Account Security (Static Data)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                 {/* These are static data as no API is available */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Password Status</span>
-                  <Badge className="bg-green-100 text-green-700">Strong</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Last Password Change</span>
-                  <span className="text-sm text-gray-700">30 days ago</span> {/* Static */}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Two-Factor Auth</span>
-                  <Badge className="bg-amber-100 text-amber-700">Disabled</Badge> {/* Static */}
-                </div>
-                <div className="pt-2">
-                  {/* Change Password button - functionality not implemented */}
-                  <Button variant="outline" size="sm" className="w-full border-blue-200 text-blue-600 text-xs">
-                    <Key className="h-3.5 w-3.5 mr-2" /> Change Password
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
+           {/* Account Security Card - always render, but disable the change password button if cannotEdit */}
+           <Card className="bg-white/90 border-none shadow-sm">
+             <CardHeader className="pb-2">
+               <CardTitle className="card-title text-base text-gray-700 flex items-center">
+                 <Key className="h-4 w-4 mr-2 text-teal-600" />
+                 Account Security (Static Data)
+               </CardTitle>
+             </CardHeader>
+             <CardContent>
+               <div className="space-y-3">
+                  {/* These are static data as no API is available */}
+                 <div className="flex items-center justify-between">
+                   <span className="text-sm text-gray-500">Password Status</span>
+                   <Badge className="bg-green-100 text-green-700">Strong</Badge>
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <span className="text-sm text-gray-500">Last Password Change</span>
+                   <span className="text-sm text-gray-700">{formatDate(viewedUser.updatedAt)}</span> {/* Using last updated as a placeholder */}
+                 </div>
+                 <div className="flex items-center justify-between">
+                   <span className="text-sm text-gray-500">Two-Factor Auth</span>
+                   <Badge className="bg-amber-100 text-amber-700">Disabled</Badge> {/* Static */}
+                 </div>
+                 <div className="pt-2">
+                   {/* Change Password button - functionality not implemented.
+                       Always render, but disable the button and prevent pointer events if cannotEdit.
+                    */}
+                    <Link href={`/users/${id}/change-password`} style={{ pointerEvents: canEdit ? 'auto' : 'none' }}> {/* Example link to a separate page */}
+                      <Button variant="outline" size="sm" className="w-full border-blue-200 text-blue-600 text-xs" disabled={!canEdit}>
+                        <Key className="h-3.5 w-3.5 mr-2" /> Change Password
+                      </Button>
+                    </Link>
+                 </div>
+               </div>
+             </CardContent>
+           </Card>
         </div>
       </div>
     </div>
