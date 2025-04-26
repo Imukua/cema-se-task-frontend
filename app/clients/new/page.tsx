@@ -1,121 +1,204 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useToast } from "@/components/ui/use-toast"
-import { Loader2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
+
+import { clientApi } from "@/lib/api/clientApi";
+import { ClientCreate, Client } from "@/lib/types/api";
+import { useAuth } from "@/lib/auth/AuthContext"; // Import useAuth
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function NewClientPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user, isLoading: isAuthLoading } = useAuth(); // Get user and auth loading state
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<ClientCreate>({
+    userId: undefined, // Initialize userId as undefined
     fullName: "",
     dob: "",
     gender: "Male",
     contact: "",
     notes: "",
-  })
+  });
   const [errors, setErrors] = useState({
     fullName: "",
     dob: "",
     contact: "",
-  })
+    userId: "", // Add error state for userId
+  });
+
+  // Effect to set userId from authenticated user
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        userId: user.id,
+      }));
+       // Clear userId error if it was set
+       if(errors.userId) {
+           setErrors(prev => ({ ...prev, userId: "" }));
+       }
+    } else if (!isAuthLoading) {
+       // If auth is not loading and no user, maybe handle this state
+       // For this page, we assume user must be logged in via AuthProvider redirect
+       // but setting an error ensures validation catches it if somehow not set.
+       setErrors(prev => ({ ...prev, userId: "User not authenticated" }));
+    }
+  }, [user, isAuthLoading, errors.userId]); // Depend on user, isAuthLoading, and errors.userId
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
+    }));
 
     // Clear error when user types
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,
         [name]: "",
-      }))
+      }));
     }
-  }
+  };
 
   const handleRadioChange = (value: string) => {
     setFormData((prev) => ({
       ...prev,
       gender: value,
-    }))
-  }
+    }));
+  };
 
   const validateForm = () => {
-    let isValid = true
-    const newErrors = { fullName: "", dob: "", contact: "" }
+    let isValid = true;
+    const newErrors = { fullName: "", dob: "", contact: "", userId: "" }; // Include userId error
+
+    if (!formData.userId) {
+        newErrors.userId = "Authenticated user is required to create a client.";
+        isValid = false;
+    }
 
     if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required"
-      isValid = false
+      newErrors.fullName = "Full name is required";
+      isValid = false;
     }
 
     if (!formData.dob) {
-      newErrors.dob = "Date of birth is required"
-      isValid = false
+      newErrors.dob = "Date of birth is required";
+      isValid = false;
     } else {
-      const dobDate = new Date(formData.dob)
-      const today = new Date()
-      if (dobDate > today) {
-        newErrors.dob = "Date of birth cannot be in the future"
-        isValid = false
+      try {
+         const dobDate = new Date(formData.dob);
+         const today = new Date();
+         if (isNaN(dobDate.getTime()) || dobDate > today) {
+           newErrors.dob = "Please enter a valid date of birth in the past";
+           isValid = false;
+         }
+      } catch (e) {
+         newErrors.dob = "Invalid date format";
+         isValid = false;
       }
     }
 
-    if (!formData.contact.trim()) {
-      newErrors.contact = "Contact information is required"
-      isValid = false
+    if (!formData.contact?.trim()) {
+      newErrors.contact = "Contact information is required";
+      isValid = false;
     }
 
-    setErrors(newErrors)
-    return isValid
-  }
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      toast({
+        title: "Validation Error",
+        description: "Please fill out all required fields correctly.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Ensure userId is definitely set before sending
+      if (!formData.userId) {
+           // This case should ideally be caught by validateForm,
+           // but a final check adds robustness.
+           throw new Error("User ID is missing. Cannot create client.");
+      }
 
-      // Mock successful client creation
+      const createdClient = await clientApi.createClient(formData);
+
       toast({
         title: "Client Created",
-        description: `${formData.fullName} has been successfully added.`,
+        description: `${createdClient.fullName} has been successfully added.`,
         variant: "default",
-      })
+      });
 
-      // Redirect to clients page
-      router.push("/clients")
-    } catch (error) {
+      router.push("/clients");
+    } catch (error: any) {
+      console.error("Error creating client:", error);
       toast({
         title: "Error",
-        description: "An error occurred while creating the client. Please try again.",
+        description: `Failed to create client. ${error.message || "Please try again."}`,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
+  };
+
+  // Show loading skeleton or redirect if auth is loading and no user
+  if (isAuthLoading) {
+      return (
+          <div className="space-y-6">
+               <Skeleton className="h-8 w-64" />
+               <Card className="bg-white/80 border-teal-100">
+                   <CardHeader><Skeleton className="h-7 w-40" /></CardHeader>
+                   <CardContent className="space-y-6">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <Skeleton className="h-12 w-full" />
+                           <Skeleton className="h-12 w-full" />
+                           <Skeleton className="h-12 w-full" />
+                           <Skeleton className="h-12 w-full" />
+                       </div>
+                       <Skeleton className="h-24 w-full" />
+                   </CardContent>
+                   <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
+                       <Skeleton className="h-10 w-20" />
+                       <Skeleton className="h-10 w-24" />
+                   </CardFooter>
+               </Card>
+          </div>
+      );
   }
+
+  // If auth loading is complete but no user, this page shouldn't be accessible,
+  // AuthProvider should handle redirection, but defensive check is good.
+  if (!user) {
+       // AuthProvider should typically handle redirecting unauthenticated users
+       // If it doesn't, you might want a manual redirect here:
+       // router.push('/login');
+       return <div className="text-center py-12 text-red-600">Authentication required to view this page.</div>;
+  }
+
 
   return (
     <div className="space-y-6">
@@ -209,12 +292,13 @@ export default function NewClientPage() {
               <Textarea
                 id="notes"
                 name="notes"
-                value={formData.notes}
+                value={formData.notes ?? ""}
                 onChange={handleChange}
                 placeholder="Any additional information about the client"
                 className="min-h-[100px]"
               />
             </div>
+             {errors.userId && <p className="text-sm text-red-500">{errors.userId}</p>} {/* Display userId error */}
           </form>
         </CardContent>
         <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
@@ -223,7 +307,7 @@ export default function NewClientPage() {
               Cancel
             </Button>
           </Link>
-          <Button type="submit" form="new-client-form" className="bg-teal-600 hover:bg-teal-700" disabled={isLoading}>
+          <Button type="submit" form="new-client-form" className="bg-teal-600 hover:bg-teal-700" disabled={isLoading || isAuthLoading || !user}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -236,5 +320,5 @@ export default function NewClientPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
