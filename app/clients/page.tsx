@@ -9,21 +9,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { calculateAge } from "@/lib/utils"
+import { mockClients, mockPrograms } from "@/lib/mock-data"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Slider } from "@/components/ui/slider"
 import { Search, Plus, Filter, X } from "lucide-react"
-import { useAPI } from "@/lib/hooks/useAPI"
-import { clientApi } from "@/lib/api/clientApi"
-import { programApi } from "@/lib/api/programApi"
-import type { Client, PaginatedResponse, Program } from "@/lib/types/api"
-import { useToast } from "@/hooks/use-toast"
 
 export default function ClientsPage() {
-  const { toast } = useToast()
+  const [clients, setClients] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
-  const [programs, setPrograms] = useState<Program[]>([])
   const itemsPerPage = 10
 
   // Filter states
@@ -32,90 +28,63 @@ export default function ClientsPage() {
   const [programFilter, setProgramFilter] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
 
-  // Fetch clients with filters
-  const {
-    data: clientsData,
-    loading: clientsLoading,
-    error: clientsError,
-    refetch: refetchClients,
-  } = useAPI<PaginatedResponse<Client>>(
-    () =>
-      clientApi.getClients({
-        page: currentPage,
-        limit: itemsPerPage,
-        search: searchTerm || undefined,
-        gender: genderFilter || undefined,
-        sortBy: "fullName:asc",
-      }),
-    [currentPage, itemsPerPage, searchTerm, genderFilter],
-  )
-
-  // Fetch programs for filter dropdown
   useEffect(() => {
-    const fetchPrograms = async () => {
+    // Simulate API call
+    const fetchClients = async () => {
+      setLoading(true)
       try {
-        const response = await programApi.getPrograms({ limit: 100 })
-        setPrograms(response.results)
+        // In a real app, this would be an API call
+        setTimeout(() => {
+          setClients(mockClients)
+          setLoading(false)
+        }, 1000)
       } catch (error) {
-        console.error("Error fetching programs:", error)
-        toast({
-          title: "Error",
-          description: "Failed to load programs for filtering",
-          variant: "destructive",
-        })
+        console.error("Error fetching clients:", error)
+        setLoading(false)
       }
     }
 
-    fetchPrograms()
-  }, [toast])
+    fetchClients()
+  }, [])
 
-  useEffect(() => {
-    if (clientsError) {
-      toast({
-        title: "Error",
-        description: "Failed to load clients. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }, [clientsError, toast])
+  // Filter clients based on search term and filters
+  const filteredClients = clients.filter((client) => {
+    // Search filter
+    const matchesSearch =
+      client.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || client.contact.includes(searchTerm)
 
-  // Apply filters
-  const handleApplyFilters = () => {
-    setCurrentPage(1)
-    refetchClients()
-    setShowFilters(false)
+    // Gender filter
+    const matchesGender = !genderFilter || client.gender === genderFilter
+
+    // Age filter
+    const age = calculateAge(client.dob)
+    const matchesAge = age >= ageRange[0] && age <= ageRange[1]
+
+    // Program filter
+    const matchesProgram = !programFilter || client.programs.some((program: any) => program.id === programFilter)
+
+    return matchesSearch && matchesGender && matchesAge && matchesProgram
+  })
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentClients = filteredClients.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber)
   }
 
   const resetFilters = () => {
     setGenderFilter(null)
     setAgeRange([0, 100])
     setProgramFilter(null)
-    setCurrentPage(1)
-    refetchClients()
   }
 
   const handleAgeRangeChange = (value: number[]) => {
     setAgeRange([value[0], value[1]])
   }
-
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber)
-  }
-
-  // Filter clients by program ID and age (client-side filtering for these since API doesn't support it)
-  const filteredClients =
-    clientsData?.results.filter((client) => {
-      // Program filter (client-side since API doesn't support it)
-      const matchesProgram = !programFilter || client.programs?.some((program) => program.id === programFilter)
-
-      // Age filter (client-side since API doesn't support it)
-      const age = calculateAge(client.dob)
-      const matchesAge = age >= ageRange[0] && age <= ageRange[1]
-
-      return matchesProgram && matchesAge
-    }) || []
-
-  const totalPages = clientsData ? Math.ceil(clientsData.totalResults / itemsPerPage) : 0
 
   return (
     <div className="space-y-4">
@@ -128,12 +97,6 @@ export default function ClientsPage() {
                 placeholder="Search clients by name or contact..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setCurrentPage(1)
-                    refetchClients()
-                  }
-                }}
                 className="pl-9 bg-white border-gray-200 focus-visible:ring-teal-500 rounded-full"
               />
             </div>
@@ -162,7 +125,7 @@ export default function ClientsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={resetFilters}
-                        className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
                       >
                         Reset all
                       </Button>
@@ -209,7 +172,7 @@ export default function ClientsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All programs</SelectItem>
-                          {programs.map((program) => (
+                          {mockPrograms.map((program) => (
                             <SelectItem key={program.id} value={program.id}>
                               {program.name}
                             </SelectItem>
@@ -224,7 +187,7 @@ export default function ClientsPage() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={handleApplyFilters}
+                        onClick={() => setShowFilters(false)}
                         className="text-xs h-8 bg-teal-600 hover:bg-teal-700"
                       >
                         Apply Filters
@@ -271,7 +234,7 @@ export default function ClientsPage() {
                   variant="outline"
                   className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
                 >
-                  Program: {programs.find((p) => p.id === programFilter)?.name}
+                  Program: {mockPrograms.find((p) => p.id === programFilter)?.name}
                   <X className="h-3 w-3 cursor-pointer" onClick={() => setProgramFilter(null)} />
                 </Badge>
               )}
@@ -294,12 +257,12 @@ export default function ClientsPage() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-medium text-gray-700">
               Clients
-              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{clientsData?.totalResults || 0}</Badge>
+              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{filteredClients.length}</Badge>
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {clientsLoading ? (
+          {loading ? (
             <div className="p-4 space-y-4">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="flex items-center space-x-4">
@@ -326,8 +289,8 @@ export default function ClientsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredClients.length > 0 ? (
-                      filteredClients.map((client) => (
+                    {currentClients.length > 0 ? (
+                      currentClients.map((client) => (
                         <TableRow key={client.id} className="hover:bg-gray-50/80 border-b border-gray-100">
                           <TableCell className="font-medium text-gray-700">{client.fullName}</TableCell>
                           <TableCell>{calculateAge(client.dob)} years</TableCell>
@@ -335,7 +298,7 @@ export default function ClientsPage() {
                           <TableCell>{client.contact}</TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
-                              {client.programs?.map((program) => (
+                              {client.programs.map((program: any) => (
                                 <Badge
                                   key={program.id}
                                   variant="outline"
@@ -371,7 +334,7 @@ export default function ClientsPage() {
               </div>
 
               {/* Pagination */}
-              {clientsData && clientsData.totalResults > itemsPerPage && (
+              {filteredClients.length > itemsPerPage && (
                 <div className="flex justify-center py-4 border-t border-gray-100">
                   <div className="flex space-x-1">
                     <Button
