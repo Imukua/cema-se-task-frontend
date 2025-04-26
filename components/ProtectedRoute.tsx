@@ -5,6 +5,7 @@ import type React from "react"
 import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth/AuthContext"
+import { PageSkeleton } from "./loading-skeleton"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -32,8 +33,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Show nothing while checking authentication
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
-  }
+    return <PageSkeleton />  }
 
   // For login and register pages, or if authenticated
   return <>{children}</>
