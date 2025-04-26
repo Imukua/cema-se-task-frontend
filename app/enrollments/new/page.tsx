@@ -1,147 +1,175 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useToast } from "@/components/ui/use-toast"
-import { Loader2 } from "lucide-react"
-import { mockClients, mockPrograms } from "@/lib/mock-data"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Import API services
+import { clientApi } from "@/lib/api/clientApi";
+import { programApi } from "@/lib/api/programApi";
+// Assume enrollmentApi exists with a createEnrollment method
+import { enrollmentApi } from "@/lib/api/enrollmentApi";
+
+// Import types
+import { Client, HealthProgram, EnrollmentCreate, Enrollment, PaginatedResponse } from "@/lib/types/api";
+
 
 export default function NewEnrollmentPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [clients, setClients] = useState<any[]>([])
-  const [programs, setPrograms] = useState<any[]>([])
-  const [loadingData, setLoadingData] = useState(true)
-  const [formData, setFormData] = useState({
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false); // Loading state for form submission
+  const [clients, setClients] = useState<Client[]>([]);
+  const [programs, setPrograms] = useState<HealthProgram[]>([]);
+  const [loadingData, setLoadingData] = useState(true); // Loading state for initial data fetch
+
+  // Assuming EnrollmentCreate includes these fields
+  const [formData, setFormData] = useState<EnrollmentCreate>({
     clientId: "",
     programId: "",
-    status: "active",
+    status: "active", // Assuming default status
     notes: "",
-  })
+    // Add any other required fields for EnrollmentCreate based on your API
+    // e.g., enrolledAt: new Date().toISOString(),
+  });
+
   const [errors, setErrors] = useState({
     clientId: "",
     programId: "",
-  })
+    // Add error states for other required fields if necessary
+  });
 
+  // Effect to fetch clients and programs on component mount
   useEffect(() => {
-    // Simulate API call to fetch clients and programs
     const fetchData = async () => {
-      setLoadingData(true)
+      setLoadingData(true);
       try {
-        // In a real app, these would be API calls
-        setTimeout(() => {
-          setClients(mockClients)
-          setPrograms(mockPrograms)
-          setLoadingData(false)
-        }, 1000)
+        // Fetch all clients (using a large limit, assuming API supports it for dropdowns)
+        const clientsResponse: PaginatedResponse<Client> = await clientApi.getClients(1, 1000); // Limit 1000
+        setClients(clientsResponse.results);
+
+        // Fetch all programs (using a large limit, assuming API supports it for dropdowns)
+        const programsResponse: PaginatedResponse<HealthProgram> = await programApi.getPrograms(1, 1000); // Limit 1000
+        setPrograms(programsResponse.results);
+
       } catch (error) {
-        console.error("Error fetching data:", error)
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
           description: "Failed to load clients and programs. Please try again.",
           variant: "destructive",
-        })
-        setLoadingData(false)
+        });
+      } finally {
+        setLoadingData(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [toast])
+    fetchData();
+  }, [toast]); // toast is stable, but included as a dependency if ESLint requires it
 
-  const handleSelectChange = (name: string, value: string) => {
+  const handleSelectChange = (name: keyof typeof formData, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
+    }));
 
     // Clear error when user selects
-    if (errors[name as keyof typeof errors]) {
+    if (errors[name as keyof typeof errors]) { // Ensure 'name' is a key of errors
       setErrors((prev) => ({
         ...prev,
         [name]: "",
-      }))
+      }));
     }
-  }
+  };
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
-  const handleRadioChange = (value: string) => {
+  const handleRadioChange = (value: "active" | "completed" | "dropped") => {
     setFormData((prev) => ({
       ...prev,
       status: value,
-    }))
-  }
+    }));
+  };
 
   const validateForm = () => {
-    let isValid = true
-    const newErrors = { clientId: "", programId: "" }
+    let isValid = true;
+    const newErrors = { clientId: "", programId: "" }; // Update with all required fields
 
     if (!formData.clientId) {
-      newErrors.clientId = "Please select a client"
-      isValid = false
+      newErrors.clientId = "Please select a client";
+      isValid = false;
     }
 
     if (!formData.programId) {
-      newErrors.programId = "Please select a program"
-      isValid = false
+      newErrors.programId = "Please select a program";
+      isValid = false;
     }
 
-    setErrors(newErrors)
-    return isValid
-  }
+    // Add validation for other required fields here
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+       toast({
+           title: "Validation Error",
+           description: "Please fill out all required fields correctly.",
+           variant: "destructive",
+       });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Call the actual API to create the enrollment
+      // Assuming enrollmentApi.createEnrollment takes EnrollmentCreate object and returns created Enrollment
+      const createdEnrollment = await enrollmentApi.createEnrollment(formData);
 
-      // Get client and program names for the toast message
-      const client = clients.find((c) => c.id === formData.clientId)
-      const program = programs.find((p) => p.id === formData.programId)
+      // Get client and program names for the toast message (optional, could fetch again or rely on included data if API returns it)
+      // For simplicity, we'll use the data fetched earlier for the dropdowns.
+      const client = clients.find((c) => c.id === createdEnrollment.clientId);
+      const program = programs.find((p) => p.id === createdEnrollment.programId);
 
-      // Mock successful enrollment creation
+
       toast({
         title: "Enrollment Created",
-        description: `${client?.fullName} has been enrolled in ${program?.name}.`,
+        description: `${client?.fullName || 'Client'} has been enrolled in ${program?.name || 'Program'}.`,
         variant: "default",
-      })
+      });
 
-      // Redirect to enrollments page
-      router.push("/enrollments")
-    } catch (error) {
+      // Redirect to enrollments page or the new enrollment's detail page
+      router.push("/enrollments"); // or `/enrollments/${createdEnrollment.id}`
+    } catch (error: any) { // Use 'any' or a more specific error type if available
+      console.error("Error creating enrollment:", error);
       toast({
         title: "Error",
-        description: "An error occurred while creating the enrollment. Please try again.",
+        description: `Failed to create enrollment. ${error.message || "Please try again."}`,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -211,6 +239,7 @@ export default function NewEnrollmentPage() {
                 <Label className="text-blue-700">
                   Status <span className="text-red-500">*</span>
                 </Label>
+                {/* Note: Status is required but not part of validation errors state */}
                 <RadioGroup value={formData.status} onValueChange={handleRadioChange} className="flex space-x-4">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="active" id="active" />
@@ -234,7 +263,7 @@ export default function NewEnrollmentPage() {
                 <Textarea
                   id="notes"
                   name="notes"
-                  value={formData.notes}
+                  value={formData.notes ?? ""}
                   onChange={handleTextareaChange}
                   placeholder="Any additional information about this enrollment"
                   className="min-h-[100px]"
@@ -253,7 +282,7 @@ export default function NewEnrollmentPage() {
             type="submit"
             form="new-enrollment-form"
             className="bg-teal-600 hover:bg-teal-700"
-            disabled={isLoading || loadingData}
+            disabled={isLoading || loadingData || !clients.length || !programs.length} // Disable if data is loading or lists are empty
           >
             {isLoading ? (
               <>
@@ -267,5 +296,5 @@ export default function NewEnrollmentPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
