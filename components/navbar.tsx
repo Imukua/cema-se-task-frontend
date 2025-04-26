@@ -1,33 +1,33 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Menu, X } from "lucide-react"
-import { useAuth } from "@/lib/auth/AuthContext"
+} from "@/components/ui/dropdown-menu";
+import { Menu, X } from "lucide-react";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false)
-  const pathname = usePathname()
-  const { user, isAuthenticated, logout } = useAuth()
+  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const toggleMenu = () => {
-    setIsOpen(!isOpen)
-  }
+    setIsOpen(!isOpen);
+  };
 
   const handleLogout = () => {
-    logout()
-    toggleMenu()
-  }
+    logout();
+    toggleMenu();
+  };
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard" },
@@ -35,21 +35,21 @@ export default function Navbar() {
     { name: "Programs", href: "/programs" },
     { name: "Enrollments", href: "/enrollments" },
     { name: "Users", href: "/users" },
-  ]
+  ];
 
   const isActive = (path: string) => {
-    return pathname === path
-  }
+    return pathname === path;
+  };
 
   // Get user initials for avatar
   const getInitials = (name: string) => {
-    if (!name) return "U"
+    if (!name) return "U";
     return name
       .split(" ")
       .map((n) => n[0])
       .join("")
-      .toUpperCase()
-  }
+      .toUpperCase();
+  };
 
   return (
     <nav className="bg-white border-b border-teal-100 shadow-sm">
@@ -71,7 +71,9 @@ export default function Navbar() {
                   d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
                 />
               </svg>
-              <span className="ml-2 text-xl font-semibold text-teal-700">CeMa</span>
+              <span className="ml-2 text-xl font-semibold text-teal-700">
+                CeMa
+              </span>
             </Link>
           </div>
 
@@ -84,7 +86,9 @@ export default function Navbar() {
                     key={item.name}
                     href={item.href}
                     className={`px-3 py-2 rounded-md text-sm font-medium ${
-                      isActive(item.href) ? "bg-teal-50 text-teal-700" : "text-blue-600 hover:bg-blue-50"
+                      isActive(item.href)
+                        ? "bg-teal-50 text-teal-700"
+                        : "text-blue-600 hover:bg-blue-50"
                     }`}
                   >
                     {item.name}
@@ -92,9 +96,14 @@ export default function Navbar() {
                 ))}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button
+                      variant="ghost"
+                      className="relative h-8 w-8 rounded-full"
+                    >
                       <Avatar className="h-8 w-8 bg-teal-100">
-                        <AvatarFallback className="text-teal-700">{user ? getInitials(user.name) : "U"}</AvatarFallback>
+                        <AvatarFallback className="text-teal-700">
+                          {user ? getInitials(user.name) : "U"}
+                        </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
@@ -123,7 +132,9 @@ export default function Navbar() {
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button className="bg-teal-600 hover:bg-teal-700">Register</Button>
+                  <Button className="bg-teal-600 hover:bg-teal-700">
+                    Register
+                  </Button>
                 </Link>
               </div>
             )}
@@ -156,7 +167,9 @@ export default function Navbar() {
                   key={item.name}
                   href={item.href}
                   className={`block px-4 py-2 text-base font-medium ${
-                    isActive(item.href) ? "bg-teal-50 text-teal-700" : "text-blue-600 hover:bg-blue-50"
+                    isActive(item.href)
+                      ? "bg-teal-50 text-teal-700"
+                      : "text-blue-600 hover:bg-blue-50"
                   }`}
                   onClick={toggleMenu}
                 >
@@ -201,5 +214,5 @@ export default function Navbar() {
         </div>
       )}
     </nav>
-  )
+  );
 }

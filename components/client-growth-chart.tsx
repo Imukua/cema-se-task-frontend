@@ -1,29 +1,29 @@
-"use client"
+"use client";
 
-import { useEffect, useRef } from "react"
-import { Chart, registerables } from "chart.js"
+import { useEffect, useRef } from "react";
+import { Chart, registerables } from "chart.js";
 
 // Register Chart.js components
-Chart.register(...registerables)
+Chart.register(...registerables);
 
 export function ClientGrowthChart() {
-  const chartRef = useRef<HTMLCanvasElement>(null)
-  const chartInstance = useRef<Chart | null>(null)
+  const chartRef = useRef<HTMLCanvasElement>(null);
+  const chartInstance = useRef<Chart | null>(null);
 
   useEffect(() => {
-    if (!chartRef.current) return
+    if (!chartRef.current) return;
 
     // Destroy previous chart instance if it exists
     if (chartInstance.current) {
-      chartInstance.current.destroy()
+      chartInstance.current.destroy();
     }
 
-    const ctx = chartRef.current.getContext("2d")
-    if (!ctx) return
+    const ctx = chartRef.current.getContext("2d");
+    if (!ctx) return;
 
     // Mock data for client growth over the last 6 months
-    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-    const data = [4, 6, 8, 10, 12, 15]
+    const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    const data = [4, 6, 8, 10, 12, 15];
 
     // Create new chart
     chartInstance.current = new Chart(ctx, {
@@ -96,15 +96,15 @@ export function ClientGrowthChart() {
           mode: "index",
         },
       },
-    })
+    });
 
     // Cleanup function
     return () => {
       if (chartInstance.current) {
-        chartInstance.current.destroy()
+        chartInstance.current.destroy();
       }
-    }
-  }, [])
+    };
+  }, []);
 
-  return <canvas ref={chartRef} />
+  return <canvas ref={chartRef} />;
 }

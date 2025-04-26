@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { calculateAge } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { calculateAge } from "@/lib/utils";
 // Remove mock data imports
 // import { mockClients, mockEnrollments } from "@/lib/mock-data"
 import {
@@ -25,56 +25,54 @@ import {
   AlertCircle,
   FileText,
   CalendarClock,
-} from "lucide-react"
-import { ClientEnrollmentTimeline } from "@/components/client-enrollment-timeline"
+} from "lucide-react";
+import { ClientEnrollmentTimeline } from "@/components/client-enrollment-timeline";
 // Import your clientApi service
-import { clientApi } from "@/lib/api/clientApi"
+import { clientApi } from "@/lib/api/clientApi";
 // Import necessary types if available
-import { Client } from "@/lib/types/api"
-
+import { Client } from "@/lib/types/api";
 
 export default function ClientProfilePage() {
-  const { id } = useParams()
+  const { id } = useParams();
   // Use the Client type if available, otherwise keep any or define a specific type
-  const [client, setClient] = useState<Client | null>(null)
+  const [client, setClient] = useState<Client | null>(null);
   // Enrollments are included within the client object from the API,
   // so we don't need a separate state for them initially, but we can
   // derive them from the client state for rendering.
   // const [enrollments, setEnrollments] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("overview")
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     const fetchClientData = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         // Replace mock call with actual API call to get client by ID
         // Assuming clientApi has a getClientById function that fetches client with enrollments
-        const fetchedClient: Client = await clientApi.getClient(id as string)
+        const fetchedClient: Client = await clientApi.getClient(id as string);
 
         if (fetchedClient) {
-          setClient(fetchedClient)
+          setClient(fetchedClient);
           // Enrollments are nested in fetchedClient.programs, so no separate fetch needed
           // setEnrollments(fetchedClient.programs); // You can optionally store them separately if needed
         } else {
-           setClient(null); // Set client to null if not found
+          setClient(null); // Set client to null if not found
         }
       } catch (error) {
-        console.error("Error fetching client data:", error)
+        console.error("Error fetching client data:", error);
         setClient(null); // Set client to null on error
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     if (id) {
-      fetchClientData()
+      fetchClientData();
     }
-  }, [id]) // Dependency array includes id
+  }, [id]); // Dependency array includes id
 
   // Derive enrollments from the fetched client state
   const enrollments = client?.programs || [];
-
 
   if (loading) {
     return (
@@ -102,26 +100,38 @@ export default function ClientProfilePage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   if (!client) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <h1 className="text-2xl font-bold text-red-600 mb-4">Client Not Found</h1>
-        <p className="text-gray-600 mb-6">The client you are looking for does not exist or has been removed.</p>
+        <h1 className="text-2xl font-bold text-red-600 mb-4">
+          Client Not Found
+        </h1>
+        <p className="text-gray-600 mb-6">
+          The client you are looking for does not exist or has been removed.
+        </p>
         <Link href="/clients">
-          <Button className="bg-teal-600 hover:bg-teal-700">Return to Clients</Button>
+          <Button className="bg-teal-600 hover:bg-teal-700">
+            Return to Clients
+          </Button>
         </Link>
       </div>
-    )
+    );
   }
 
   // Calculate enrollment statistics from the fetched enrollments
-  const totalEnrollments = enrollments.length
-  const activeEnrollments = enrollments.filter((e: any) => e.status === "active").length
-  const completedEnrollments = enrollments.filter((e: any) => e.status === "completed").length
-  const droppedEnrollments = enrollments.filter((e: any) => e.status === "dropped").length
+  const totalEnrollments = enrollments.length;
+  const activeEnrollments = enrollments.filter(
+    (e: any) => e.status === "active",
+  ).length;
+  const completedEnrollments = enrollments.filter(
+    (e: any) => e.status === "completed",
+  ).length;
+  const droppedEnrollments = enrollments.filter(
+    (e: any) => e.status === "dropped",
+  ).length;
 
   // Generate initials from client name
   const getInitials = (name: string) => {
@@ -129,15 +139,19 @@ export default function ClientProfilePage() {
       .split(" ")
       .map((n) => n[0])
       .join("")
-      .toUpperCase()
-  }
+      .toUpperCase();
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-2">
           <Link href="/clients">
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700"
+            >
               <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
           </Link>
@@ -161,25 +175,36 @@ export default function ClientProfilePage() {
               <div className="flex-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-800 font-playfair">{client.fullName}</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 font-playfair">
+                      {client.fullName}
+                    </h2>
                     <div className="flex items-center gap-2 text-gray-500 mt-1">
                       <Calendar className="h-4 w-4" />
                       {/* Ensure client.dob is a valid Date object or string for calculateAge and toLocaleDateString */}
                       <span>
-                        {new Date(client.dob).toLocaleDateString()} ({calculateAge(client.dob)} years)
+                        {new Date(client.dob).toLocaleDateString()} (
+                        {calculateAge(client.dob)} years)
                       </span>
                       <span className="text-gray-300">•</span>
-                      <Badge className="bg-blue-100 text-blue-700 font-normal">{client.gender}</Badge>
+                      <Badge className="bg-blue-100 text-blue-700 font-normal">
+                        {client.gender}
+                      </Badge>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
                     {/* Iterate through client.programs to display enrolled programs */}
-                    {client.programs && client.programs.map((enrollment: any) => (
-                      <Badge key={enrollment.id} className="bg-teal-100 text-teal-700 hover:bg-teal-200">
-                         {/* Access the program name from the nested healthProgram object */}
-                        {enrollment.healthProgram ? enrollment.healthProgram.name : 'Unknown Program'}
-                      </Badge>
-                    ))}
+                    {client.programs &&
+                      client.programs.map((enrollment: any) => (
+                        <Badge
+                          key={enrollment.id}
+                          className="bg-teal-100 text-teal-700 hover:bg-teal-200"
+                        >
+                          {/* Access the program name from the nested healthProgram object */}
+                          {enrollment.healthProgram
+                            ? enrollment.healthProgram.name
+                            : "Unknown Program"}
+                        </Badge>
+                      ))}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
@@ -198,8 +223,10 @@ export default function ClientProfilePage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Client Since</p>
-                       {/* Ensure client.createdAt is a valid Date object or string */}
-                      <p className="text-sm font-medium">{new Date(client.createdAt).toLocaleDateString()}</p>
+                      {/* Ensure client.createdAt is a valid Date object or string */}
+                      <p className="text-sm font-medium">
+                        {new Date(client.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -208,8 +235,10 @@ export default function ClientProfilePage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Programs Enrolled</p>
-                       {/* Display the count of programs (enrollments) */}
-                      <p className="text-sm font-medium">{enrollments.length}</p>
+                      {/* Display the count of programs (enrollments) */}
+                      <p className="text-sm font-medium">
+                        {enrollments.length}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -220,7 +249,11 @@ export default function ClientProfilePage() {
 
         {/* Main Content Area */}
         <div className="lg:col-span-3 space-y-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger
                 value="overview"
@@ -255,47 +288,60 @@ export default function ClientProfilePage() {
                     <div className="space-y-4">
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
-                          <User className="h-4 w-4 mr-1 text-gray-400" /> Full Name
+                          <User className="h-4 w-4 mr-1 text-gray-400" /> Full
+                          Name
                         </h3>
-                        <p className="text-base font-medium text-blue-700">{client.fullName}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 flex items-center">
-                          <Calendar className="h-4 w-4 mr-1 text-gray-400" /> Date of Birth
-                        </h3>
-                         {/* Ensure client.dob is a valid Date object or string */}
                         <p className="text-base font-medium text-blue-700">
-                          {new Date(client.dob).toLocaleDateString()} ({calculateAge(client.dob)} years)
+                          {client.fullName}
                         </p>
                       </div>
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
-                          <Badge className="h-4 w-4 mr-1 text-gray-400" /> Gender
+                          <Calendar className="h-4 w-4 mr-1 text-gray-400" />{" "}
+                          Date of Birth
                         </h3>
-                        <p className="text-base font-medium text-blue-700">{client.gender}</p>
+                        {/* Ensure client.dob is a valid Date object or string */}
+                        <p className="text-base font-medium text-blue-700">
+                          {new Date(client.dob).toLocaleDateString()} (
+                          {calculateAge(client.dob)} years)
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500 flex items-center">
+                          <Badge className="h-4 w-4 mr-1 text-gray-400" />{" "}
+                          Gender
+                        </h3>
+                        <p className="text-base font-medium text-blue-700">
+                          {client.gender}
+                        </p>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
-                          <Phone className="h-4 w-4 mr-1 text-gray-400" /> Contact
+                          <Phone className="h-4 w-4 mr-1 text-gray-400" />{" "}
+                          Contact
                         </h3>
-                        <p className="text-base font-medium text-blue-700">{client.contact}</p>
+                        <p className="text-base font-medium text-blue-700">
+                          {client.contact}
+                        </p>
                       </div>
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
-                          <Clock className="h-4 w-4 mr-1 text-gray-400" /> Created Date
+                          <Clock className="h-4 w-4 mr-1 text-gray-400" />{" "}
+                          Created Date
                         </h3>
-                         {/* Ensure client.createdAt is a valid Date object or string */}
+                        {/* Ensure client.createdAt is a valid Date object or string */}
                         <p className="text-base font-medium text-blue-700">
                           {new Date(client.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 flex items-center">
-                          <Activity className="h-4 w-4 mr-1 text-gray-400" /> Last Updated
+                          <Activity className="h-4 w-4 mr-1 text-gray-400" />{" "}
+                          Last Updated
                         </h3>
-                         {/* Ensure client.updatedAt is a valid Date object or string */}
+                        {/* Ensure client.updatedAt is a valid Date object or string */}
                         <p className="text-base font-medium text-blue-700">
                           {new Date(client.updatedAt).toLocaleDateString()}
                         </p>
@@ -306,9 +352,12 @@ export default function ClientProfilePage() {
                   {client.notes && (
                     <div className="mt-6">
                       <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
-                        <FileText className="h-4 w-4 mr-1 text-gray-400" /> Notes
+                        <FileText className="h-4 w-4 mr-1 text-gray-400" />{" "}
+                        Notes
                       </h3>
-                      <div className="p-4 bg-blue-50 rounded-md text-blue-700 text-sm">{client.notes}</div>
+                      <div className="p-4 bg-blue-50 rounded-md text-blue-700 text-sm">
+                        {client.notes}
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -330,13 +379,24 @@ export default function ClientProfilePage() {
                         value="active"
                         className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700"
                       >
-                        Active ({enrollments.filter((e: any) => e.status === "active").length})
+                        Active (
+                        {
+                          enrollments.filter((e: any) => e.status === "active")
+                            .length
+                        }
+                        )
                       </TabsTrigger>
                       <TabsTrigger
                         value="completed"
                         className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700"
                       >
-                        Completed ({enrollments.filter((e: any) => e.status === "completed").length})
+                        Completed (
+                        {
+                          enrollments.filter(
+                            (e: any) => e.status === "completed",
+                          ).length
+                        }
+                        )
                       </TabsTrigger>
                       <TabsTrigger
                         value="all"
@@ -347,19 +407,35 @@ export default function ClientProfilePage() {
                     </TabsList>
 
                     {["active", "completed", "all"].map((status) => (
-                      <TabsContent key={status} value={status} className="space-y-4">
+                      <TabsContent
+                        key={status}
+                        value={status}
+                        className="space-y-4"
+                      >
                         {enrollments.length === 0 ? (
-                          <div className="text-center py-8 text-gray-500">No enrollments found for this client.</div>
+                          <div className="text-center py-8 text-gray-500">
+                            No enrollments found for this client.
+                          </div>
                         ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {enrollments
-                              .filter((e: any) => status === "all" || e.status === status)
+                              .filter(
+                                (e: any) =>
+                                  status === "all" || e.status === status,
+                              )
                               .map((enrollment) => (
-                                <Card key={enrollment.id} className="border-none shadow-sm">
+                                <Card
+                                  key={enrollment.id}
+                                  className="border-none shadow-sm"
+                                >
                                   <CardContent className="p-4">
                                     <div className="flex justify-between items-start mb-2">
                                       {/* Access program name from nested healthProgram */}
-                                      <h3 className="font-medium text-blue-700">{enrollment.healthProgram ? enrollment.healthProgram.name : 'Unknown Program'}</h3>
+                                      <h3 className="font-medium text-blue-700">
+                                        {enrollment.healthProgram
+                                          ? enrollment.healthProgram.name
+                                          : "Unknown Program"}
+                                      </h3>
                                       <Badge
                                         className={
                                           enrollment.status === "active"
@@ -369,16 +445,25 @@ export default function ClientProfilePage() {
                                               : "bg-amber-100 text-amber-700"
                                         }
                                       >
-                                        {enrollment.status === "active" && <Activity className="h-3 w-3 mr-1" />}
-                                        {enrollment.status === "completed" && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                                        {enrollment.status === "dropped" && <AlertCircle className="h-3 w-3 mr-1" />}
+                                        {enrollment.status === "active" && (
+                                          <Activity className="h-3 w-3 mr-1" />
+                                        )}
+                                        {enrollment.status === "completed" && (
+                                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                                        )}
+                                        {enrollment.status === "dropped" && (
+                                          <AlertCircle className="h-3 w-3 mr-1" />
+                                        )}
                                         {enrollment.status}
                                       </Badge>
                                     </div>
                                     <div className="flex items-center text-xs text-gray-500 mb-2">
                                       <CalendarClock className="h-3 w-3 mr-1" />
-                                       {/* Ensure enrollment.enrolledAt is a valid Date object or string */}
-                                      Enrolled: {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                                      {/* Ensure enrollment.enrolledAt is a valid Date object or string */}
+                                      Enrolled:{" "}
+                                      {new Date(
+                                        enrollment.enrolledAt,
+                                      ).toLocaleDateString()}
                                     </div>
                                     {enrollment.notes && (
                                       <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 italic">
@@ -417,8 +502,11 @@ export default function ClientProfilePage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                   {/* Pass the fetched enrollments and client creation date to the timeline component */}
-                  <ClientEnrollmentTimeline enrollments={enrollments} clientCreatedAt={client.createdAt} />
+                  {/* Pass the fetched enrollments and client creation date to the timeline component */}
+                  <ClientEnrollmentTimeline
+                    enrollments={enrollments}
+                    clientCreatedAt={client.createdAt}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -438,7 +526,8 @@ export default function ClientProfilePage() {
               {/* Link to create new enrollment, pre-filling client ID */}
               <Link href={`/enrollments/new?clientId=${client.id}`}>
                 <Button className="w-full bg-teal-600 hover:bg-teal-700 text-xs h-8 justify-start">
-                  <ClipboardList className="h-3.5 w-3.5 mr-2" /> Create Enrollment
+                  <ClipboardList className="h-3.5 w-3.5 mr-2" /> Create
+                  Enrollment
                 </Button>
               </Link>
               {/* Link to edit client profile */}
@@ -448,7 +537,10 @@ export default function ClientProfilePage() {
                 </Button>
               </Link>
               {/* Print Profile button - currently just a placeholder */}
-              <Button variant="outline" className="w-full border-gray-200 text-gray-700 text-xs h-8 justify-start">
+              <Button
+                variant="outline"
+                className="w-full border-gray-200 text-gray-700 text-xs h-8 justify-start"
+              >
                 <FileText className="h-3.5 w-3.5 mr-2" /> Print Profile
               </Button>
             </CardContent>
@@ -464,26 +556,38 @@ export default function ClientProfilePage() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Total Enrollments</span>
-                  <Badge className="bg-gray-100 text-gray-700">{totalEnrollments}</Badge>
+                  <span className="text-sm text-gray-500">
+                    Total Enrollments
+                  </span>
+                  <Badge className="bg-gray-100 text-gray-700">
+                    {totalEnrollments}
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 flex items-center">
                     <Activity className="h-3 w-3 mr-1 text-green-500" /> Active
                   </span>
-                  <Badge className="bg-green-100 text-green-700">{activeEnrollments}</Badge>
+                  <Badge className="bg-green-100 text-green-700">
+                    {activeEnrollments}
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 flex items-center">
-                    <CheckCircle2 className="h-3 w-3 mr-1 text-blue-500" /> Completed
+                    <CheckCircle2 className="h-3 w-3 mr-1 text-blue-500" />{" "}
+                    Completed
                   </span>
-                  <Badge className="bg-blue-100 text-blue-700">{completedEnrollments}</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">
+                    {completedEnrollments}
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 flex items-center">
-                    <AlertCircle className="h-3 w-3 mr-1 text-amber-500" /> Dropped
+                    <AlertCircle className="h-3 w-3 mr-1 text-amber-500" />{" "}
+                    Dropped
                   </span>
-                  <Badge className="bg-amber-100 text-amber-700">{droppedEnrollments}</Badge>
+                  <Badge className="bg-amber-100 text-amber-700">
+                    {droppedEnrollments}
+                  </Badge>
                 </div>
               </div>
             </CardContent>
@@ -491,5 +595,5 @@ export default function ClientProfilePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

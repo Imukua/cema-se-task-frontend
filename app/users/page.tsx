@@ -5,7 +5,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Plus, X } from "lucide-react";
@@ -63,7 +70,6 @@ export default function UsersPage() {
     setCurrentPage(pageNumber);
   };
 
-
   return (
     <div className="space-y-4">
       <Card className="border-none shadow-sm bg-white/70">
@@ -76,23 +82,26 @@ export default function UsersPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     handleApplySearch();
                   }
                 }}
                 className="pl-9 bg-white border-gray-200 focus-visible:ring-teal-500 rounded-full flex-grow"
               />
-               <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleApplySearch}
-                  className="ml-2 h-9 text-xs border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-full"
-               >
-                  Search
-               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleApplySearch}
+                className="ml-2 h-9 text-xs border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-full"
+              >
+                Search
+              </Button>
             </div>
             <Link href="/users/new">
-              <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs h-9 px-3 flex items-center gap-1">
+              <Button
+                size="sm"
+                className="bg-teal-600 hover:bg-teal-700 text-xs h-9 px-3 flex items-center gap-1"
+              >
                 <Plus className="h-3.5 w-3.5" />
                 Add New User
               </Button>
@@ -101,16 +110,15 @@ export default function UsersPage() {
 
           {appliedSearchTerm && (
             <div className="flex flex-wrap gap-2 mt-3">
-               <Badge
-                 variant="outline"
-                 className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
-               >
-                 Search: "{appliedSearchTerm}"
-                 <X className="h-3 w-3 cursor-pointer" onClick={resetSearch} />
-               </Badge>
+              <Badge
+                variant="outline"
+                className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
+              >
+                Search: "{appliedSearchTerm}"
+                <X className="h-3 w-3 cursor-pointer" onClick={resetSearch} />
+              </Badge>
             </div>
           )}
-
         </CardContent>
       </Card>
 
@@ -119,7 +127,10 @@ export default function UsersPage() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-medium text-gray-700 font-playfair">
               Users
-              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{users.length}</Badge> {/* Note: This badge shows count for the current page */}
+              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">
+                {users.length}
+              </Badge>{" "}
+              {/* Note: This badge shows count for the current page */}
             </CardTitle>
           </div>
         </CardHeader>
@@ -137,37 +148,56 @@ export default function UsersPage() {
               ))}
             </div>
           ) : users.length === 0 ? (
-             <div className="text-center py-8 text-gray-500">
-                No users found matching the criteria. Try adjusting your search.
-             </div>
+            <div className="text-center py-8 text-gray-500">
+              No users found matching the criteria. Try adjusting your search.
+            </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 hover:bg-gray-50">
-                      <TableHead className="text-gray-600 font-medium">Name</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Email</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Role</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Created Date</TableHead>
-                      <TableHead className="text-gray-600 font-medium text-right">Actions</TableHead>
+                      <TableHead className="text-gray-600 font-medium">
+                        Name
+                      </TableHead>
+                      <TableHead className="text-gray-600 font-medium">
+                        Email
+                      </TableHead>
+                      <TableHead className="text-gray-600 font-medium">
+                        Role
+                      </TableHead>
+                      <TableHead className="text-gray-600 font-medium">
+                        Created Date
+                      </TableHead>
+                      <TableHead className="text-gray-600 font-medium text-right">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map((user) => (
-                      <TableRow key={user.id} className="hover:bg-gray-50/80 border-b border-gray-100">
-                        <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableRow
+                        key={user.id}
+                        className="hover:bg-gray-50/80 border-b border-gray-100"
+                      >
+                        <TableCell className="font-medium">
+                          {user.name}
+                        </TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge
                             className={
-                              user.role === "ADMIN" ? "bg-blue-100 text-blue-700" : "bg-teal-100 text-teal-700"
+                              user.role === "ADMIN"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-teal-100 text-teal-700"
                             }
                           >
                             {user.role}
                           </Badge>
                         </TableCell>
-                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </TableCell>
                         <TableCell className="text-right">
                           <Link href={`/users/${user.id}`}>
                             <Button
@@ -197,21 +227,23 @@ export default function UsersPage() {
                     >
                       &lt;
                     </Button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                        className={
-                          currentPage === page
-                            ? "h-8 w-8 p-0 bg-teal-600 hover:bg-teal-700"
-                            : "h-8 w-8 p-0 border-gray-200"
-                        }
-                      >
-                        {page}
-                      </Button>
-                    ))}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className={
+                            currentPage === page
+                              ? "h-8 w-8 p-0 bg-teal-600 hover:bg-teal-700"
+                              : "h-8 w-8 p-0 border-gray-200"
+                          }
+                        >
+                          {page}
+                        </Button>
+                      ),
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

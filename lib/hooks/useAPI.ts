@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { apiService } from "../api/apiService"
-import { useAuth } from "./useAuth"
+import { useState, useCallback } from "react";
+import { apiService } from "../api/apiService";
+import { useAuth } from "./useAuth";
 
 interface ApiState<T> {
-  data: T | null
-  loading: boolean
-  error: Error | null
+  data: T | null;
+  loading: boolean;
+  error: Error | null;
 }
 
 interface UseApiResponse<T> extends ApiState<T> {
-  execute: (endpoint: string, options?: any) => Promise<T | null>
-  reset: () => void
+  execute: (endpoint: string, options?: any) => Promise<T | null>;
+  reset: () => void;
 }
 
 /**
@@ -23,40 +23,40 @@ export function useAPI<T = any>(): UseApiResponse<T> {
     data: null,
     loading: false,
     error: null,
-  })
+  });
 
-  const { logout } = useAuth()
+  const { logout } = useAuth();
 
   const execute = useCallback(
     async (endpoint: string, options = {}): Promise<T | null> => {
-      setState((prev) => ({ ...prev, loading: true, error: null }))
+      setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        const data = await apiService.request<T>(endpoint, options)
-        setState({ data, loading: false, error: null })
-        return data
+        const data = await apiService.request<T>(endpoint, options);
+        setState({ data, loading: false, error: null });
+        return data;
       } catch (error) {
-        const apiError = error as Error
+        const apiError = error as Error;
 
         // If the error is a 401 and token refresh failed, logout the user
         if ((apiError as any).status === 401) {
-          logout()
+          logout();
         }
 
-        setState({ data: null, loading: false, error: apiError })
-        return null
+        setState({ data: null, loading: false, error: apiError });
+        return null;
       }
     },
     [logout],
-  )
+  );
 
   const reset = useCallback(() => {
-    setState({ data: null, loading: false, error: null })
-  }, [])
+    setState({ data: null, loading: false, error: null });
+  }, []);
 
   return {
     ...state,
     execute,
     reset,
-  }
+  };
 }

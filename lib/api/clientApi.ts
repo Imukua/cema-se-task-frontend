@@ -1,5 +1,11 @@
-import { apiService } from "./apiService"
-import type { Client, ClientCreate, ClientUpdate, ClientStatistics, PaginatedResponse } from "../types/api"
+import { apiService } from "./apiService";
+import type {
+  Client,
+  ClientCreate,
+  ClientUpdate,
+  ClientStatistics,
+  PaginatedResponse,
+} from "../types/api";
 
 export const clientApi = {
   /**
@@ -9,7 +15,7 @@ export const clientApi = {
     return apiService.request<Client>("/clients", {
       method: "POST",
       body: clientData,
-    })
+    });
   },
 
   /**
@@ -22,26 +28,26 @@ export const clientApi = {
     gender?: string,
     sortBy?: string,
   ): Promise<PaginatedResponse<Client>> {
-    let query = `?page=${page}&limit=${limit}`
-    if (search) query += `&search=${encodeURIComponent(search)}`
-    if (gender) query += `&gender=${encodeURIComponent(gender)}`
-    if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`
+    let query = `?page=${page}&limit=${limit}`;
+    if (search) query += `&search=${encodeURIComponent(search)}`;
+    if (gender) query += `&gender=${encodeURIComponent(gender)}`;
+    if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`;
 
-    return apiService.request<PaginatedResponse<Client>>(`/clients${query}`)
+    return apiService.request<PaginatedResponse<Client>>(`/clients${query}`);
   },
 
   /**
    * Get client statistics
    */
   getClientStatistics(): Promise<ClientStatistics> {
-    return apiService.request<ClientStatistics>("/clients/statistics")
+    return apiService.request<ClientStatistics>("/clients/statistics");
   },
 
   /**
    * Get a client by ID
    */
   getClient(clientId: string): Promise<Client> {
-    return apiService.request<Client>(`/clients/${clientId}`)
+    return apiService.request<Client>(`/clients/${clientId}`);
   },
 
   /**
@@ -51,7 +57,7 @@ export const clientApi = {
     return apiService.request<Client>(`/clients/${clientId}`, {
       method: "PATCH",
       body: clientData,
-    })
+    });
   },
 
   /**
@@ -60,6 +66,6 @@ export const clientApi = {
   deleteClient(clientId: string): Promise<void> {
     return apiService.request<void>(`/clients/${clientId}`, {
       method: "DELETE",
-    })
+    });
   },
-}
+};

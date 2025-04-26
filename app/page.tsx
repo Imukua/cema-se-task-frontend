@@ -1,13 +1,17 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import Link from "next/link"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight text-teal-700">Health Information System</h1>
-        <p className="text-xl text-blue-600 max-w-md">Manage clients, programs, and enrollments in one place</p>
+        <h1 className="text-4xl font-bold tracking-tight text-teal-700">
+          Health Information System
+        </h1>
+        <p className="text-xl text-blue-600 max-w-md">
+          Manage clients, programs, and enrollments in one place
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
@@ -30,9 +34,13 @@ export default function Home() {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-teal-700">Clients</h2>
-            <p className="text-blue-600">Manage client profiles and information</p>
+            <p className="text-blue-600">
+              Manage client profiles and information
+            </p>
             <Link href="/clients" className="w-full">
-              <Button className="w-full bg-teal-600 hover:bg-teal-700">View Clients</Button>
+              <Button className="w-full bg-teal-600 hover:bg-teal-700">
+                View Clients
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -58,7 +66,9 @@ export default function Home() {
             <h2 className="text-xl font-semibold text-teal-700">Programs</h2>
             <p className="text-blue-600">View and manage health programs</p>
             <Link href="/programs" className="w-full">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700">View Programs</Button>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                View Programs
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -84,7 +94,9 @@ export default function Home() {
             <h2 className="text-xl font-semibold text-teal-700">Enrollments</h2>
             <p className="text-blue-600">Manage program enrollments</p>
             <Link href="/enrollments" className="w-full">
-              <Button className="w-full bg-teal-600 hover:bg-teal-700">View Enrollments</Button>
+              <Button className="w-full bg-teal-600 hover:bg-teal-700">
+                View Enrollments
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -92,7 +104,10 @@ export default function Home() {
 
       <div className="flex space-x-4 mt-8">
         <Link href="/login">
-          <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
+          <Button
+            variant="outline"
+            className="border-blue-500 text-blue-600 hover:bg-blue-50"
+          >
             Login
           </Button>
         </Link>
@@ -101,5 +116,5 @@ export default function Home() {
         </Link>
       </div>
     </div>
-  )
+  );
 }

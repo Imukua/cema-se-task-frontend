@@ -6,7 +6,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +25,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { programApi } from "@/lib/api/programApi";
 // Assume necessary types like HealthProgram and HealthProgramUpdate exist
 import { HealthProgram, HealthProgramUpdate } from "@/lib/types/api";
-
 
 export default function EditProgramPage() {
   const router = useRouter();
@@ -66,28 +72,32 @@ export default function EditProgramPage() {
     }
   }, [id]); // Re-run effect if ID changes
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error when user types
-    if (errors[name as keyof typeof errors]) {
-      setErrors((prev) => ({
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({
         ...prev,
-        [name]: "",
+        [name]: value,
       }));
-    }
-  }, [errors]); // Depend on errors to correctly clear them
+
+      // Clear error when user types
+      if (errors[name as keyof typeof errors]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+    },
+    [errors],
+  ); // Depend on errors to correctly clear them
 
   const validateForm = () => {
     let isValid = true;
     const newErrors = { name: "" }; // Update with all required fields for update
 
     // Assuming name is still required for update
-    if (!formData.name?.trim()) { // Use optional chaining as HealthProgramUpdate might have optional fields
+    if (!formData.name?.trim()) {
+      // Use optional chaining as HealthProgramUpdate might have optional fields
       newErrors.name = "Program name is required";
       isValid = false;
     }
@@ -102,11 +112,11 @@ export default function EditProgramPage() {
     e.preventDefault();
 
     if (!validateForm()) {
-        toast({
-            title: "Validation Error",
-            description: "Please fill out all required fields correctly.",
-            variant: "destructive",
-        });
+      toast({
+        title: "Validation Error",
+        description: "Please fill out all required fields correctly.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -115,7 +125,10 @@ export default function EditProgramPage() {
     try {
       // Call the actual API to update the program
       // Assuming programApi.updateProgram takes programId and HealthProgramUpdate object
-      const updatedProgram: HealthProgram = await programApi.updateProgram(id, formData);
+      const updatedProgram: HealthProgram = await programApi.updateProgram(
+        id,
+        formData,
+      );
 
       toast({
         title: "Program Updated",
@@ -125,7 +138,8 @@ export default function EditProgramPage() {
 
       // Redirect to the program details page
       router.push(`/programs/${id}`);
-    } catch (error: any) { // Use 'any' or a more specific error type if available
+    } catch (error: any) {
+      // Use 'any' or a more specific error type if available
       console.error("Error updating program:", error);
       toast({
         title: "Error",
@@ -139,53 +153,70 @@ export default function EditProgramPage() {
 
   // Show loading skeleton while fetching initial data
   if (loadingData) {
-     return (
-        <div className="space-y-6">
-             <div className="flex justify-between items-center">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="h-10 w-24" />
-            </div>
-            <Card className="bg-white/80 border-teal-100">
-                 <CardHeader><Skeleton className="h-7 w-40" /></CardHeader>
-                 <CardContent className="space-y-6">
-                      <Skeleton className="h-12 w-full" />
-                      <Skeleton className="h-40 w-full" />
-                 </CardContent>
-                 <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
-                      <Skeleton className="h-10 w-20" />
-                      <Skeleton className="h-10 w-24" />
-                 </CardFooter>
-            </Card>
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-24" />
         </div>
-     );
+        <Card className="bg-white/80 border-teal-100">
+          <CardHeader>
+            <Skeleton className="h-7 w-40" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </CardContent>
+          <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-24" />
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   // Show Program Not Found message if fetching failed or program is null
   if (!program) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <h1 className="text-2xl font-bold text-red-600 mb-4">Program Not Found</h1>
-        <p className="text-gray-600 mb-6">The program you are looking for does not exist or an error occurred.</p>
+        <h1 className="text-2xl font-bold text-red-600 mb-4">
+          Program Not Found
+        </h1>
+        <p className="text-gray-600 mb-6">
+          The program you are looking for does not exist or an error occurred.
+        </p>
         <Link href="/programs">
-          <Button className="bg-teal-600 hover:bg-teal-700">Return to Programs List</Button>
+          <Button className="bg-teal-600 hover:bg-teal-700">
+            Return to Programs List
+          </Button>
         </Link>
       </div>
     );
   }
 
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-         <div className="flex items-center gap-2">
-              <Link href={`/programs/${id}`}> {/* Link back to program details */}
-                <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
-                </Button>
-              </Link>
-              <h1 className="text-2xl font-bold text-teal-700">Edit Program: {program.name}</h1>
-         </div>
-        <Link href="/programs"> {/* Cancel links back to list */}
+        <div className="flex items-center gap-2">
+          <Link href={`/programs/${id}`}>
+            {" "}
+            {/* Link back to program details */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-teal-700">
+            Edit Program: {program.name}
+          </h1>
+        </div>
+        <Link href="/programs">
+          {" "}
+          {/* Cancel links back to list */}
           <Button variant="outline" className="border-blue-200 text-blue-600">
             Cancel
           </Button>
@@ -194,11 +225,19 @@ export default function EditProgramPage() {
 
       <Card className="bg-white/80 border-teal-100">
         <CardHeader>
-          <CardTitle className="text-xl text-teal-700">Program Information</CardTitle>
-          <CardDescription className="text-blue-600">Update the details for the health program</CardDescription>
+          <CardTitle className="text-xl text-teal-700">
+            Program Information
+          </CardTitle>
+          <CardDescription className="text-blue-600">
+            Update the details for the health program
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form id="edit-program-form" onSubmit={handleSubmit} className="space-y-6">
+          <form
+            id="edit-program-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             <div className="space-y-2">
               <Label htmlFor="name" className="text-blue-700">
                 Program Name <span className="text-red-500">*</span>
@@ -211,7 +250,9 @@ export default function EditProgramPage() {
                 placeholder="e.g., HIV Prevention"
                 className={errors.name ? "border-red-300" : ""}
               />
-              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -221,7 +262,7 @@ export default function EditProgramPage() {
               <Textarea
                 id="description"
                 name="description"
-                value={formData.description || ''} // Ensure value is never null for textarea
+                value={formData.description || ""} // Ensure value is never null for textarea
                 onChange={handleChange}
                 placeholder="Provide a detailed description of the program"
                 className="min-h-[150px]"
@@ -230,12 +271,19 @@ export default function EditProgramPage() {
           </form>
         </CardContent>
         <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
-          <Link href={`/programs/${id}`}> {/* Cancel links back to program details */}
-             <Button variant="outline" className="border-blue-200 text-blue-600">
-                Cancel
-             </Button>
+          <Link href={`/programs/${id}`}>
+            {" "}
+            {/* Cancel links back to program details */}
+            <Button variant="outline" className="border-blue-200 text-blue-600">
+              Cancel
+            </Button>
           </Link>
-          <Button type="submit" form="edit-program-form" className="bg-teal-600 hover:bg-teal-700" disabled={isLoading || loadingData}>
+          <Button
+            type="submit"
+            form="edit-program-form"
+            className="bg-teal-600 hover:bg-teal-700"
+            disabled={isLoading || loadingData}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

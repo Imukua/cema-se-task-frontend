@@ -6,13 +6,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Import API services
 import { clientApi } from "@/lib/api/clientApi";
@@ -21,8 +34,13 @@ import { programApi } from "@/lib/api/programApi";
 import { enrollmentApi } from "@/lib/api/enrollmentApi";
 
 // Import types
-import { Client, HealthProgram, EnrollmentCreate, Enrollment, PaginatedResponse } from "@/lib/types/api";
-
+import {
+  Client,
+  HealthProgram,
+  EnrollmentCreate,
+  Enrollment,
+  PaginatedResponse,
+} from "@/lib/types/api";
 
 export default function NewEnrollmentPage() {
   const router = useRouter();
@@ -54,13 +72,14 @@ export default function NewEnrollmentPage() {
       setLoadingData(true);
       try {
         // Fetch all clients (using a large limit, assuming API supports it for dropdowns)
-        const clientsResponse: PaginatedResponse<Client> = await clientApi.getClients(1, 1000); // Limit 1000
+        const clientsResponse: PaginatedResponse<Client> =
+          await clientApi.getClients(1, 1000); // Limit 1000
         setClients(clientsResponse.results);
 
         // Fetch all programs (using a large limit, assuming API supports it for dropdowns)
-        const programsResponse: PaginatedResponse<HealthProgram> = await programApi.getPrograms(1, 1000); // Limit 1000
+        const programsResponse: PaginatedResponse<HealthProgram> =
+          await programApi.getPrograms(1, 1000); // Limit 1000
         setPrograms(programsResponse.results);
-
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({
@@ -83,7 +102,8 @@ export default function NewEnrollmentPage() {
     }));
 
     // Clear error when user selects
-    if (errors[name as keyof typeof errors]) { // Ensure 'name' is a key of errors
+    if (errors[name as keyof typeof errors]) {
+      // Ensure 'name' is a key of errors
       setErrors((prev) => ({
         ...prev,
         [name]: "",
@@ -130,11 +150,11 @@ export default function NewEnrollmentPage() {
     e.preventDefault();
 
     if (!validateForm()) {
-       toast({
-           title: "Validation Error",
-           description: "Please fill out all required fields correctly.",
-           variant: "destructive",
-       });
+      toast({
+        title: "Validation Error",
+        description: "Please fill out all required fields correctly.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -148,18 +168,20 @@ export default function NewEnrollmentPage() {
       // Get client and program names for the toast message (optional, could fetch again or rely on included data if API returns it)
       // For simplicity, we'll use the data fetched earlier for the dropdowns.
       const client = clients.find((c) => c.id === createdEnrollment.clientId);
-      const program = programs.find((p) => p.id === createdEnrollment.programId);
-
+      const program = programs.find(
+        (p) => p.id === createdEnrollment.programId,
+      );
 
       toast({
         title: "Enrollment Created",
-        description: `${client?.fullName || 'Client'} has been enrolled in ${program?.name || 'Program'}.`,
+        description: `${client?.fullName || "Client"} has been enrolled in ${program?.name || "Program"}.`,
         variant: "default",
       });
 
       // Redirect to enrollments page or the new enrollment's detail page
       router.push("/enrollments"); // or `/enrollments/${createdEnrollment.id}`
-    } catch (error: any) { // Use 'any' or a more specific error type if available
+    } catch (error: any) {
+      // Use 'any' or a more specific error type if available
       console.error("Error creating enrollment:", error);
       toast({
         title: "Error",
@@ -174,7 +196,9 @@ export default function NewEnrollmentPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-teal-700">Create New Enrollment</h1>
+        <h1 className="text-2xl font-bold text-teal-700">
+          Create New Enrollment
+        </h1>
         <Link href="/enrollments">
           <Button variant="outline" className="border-blue-200 text-blue-600">
             Cancel
@@ -184,8 +208,12 @@ export default function NewEnrollmentPage() {
 
       <Card className="bg-white/80 border-teal-100">
         <CardHeader>
-          <CardTitle className="text-xl text-teal-700">Enrollment Information</CardTitle>
-          <CardDescription className="text-blue-600">Enroll a client in a health program</CardDescription>
+          <CardTitle className="text-xl text-teal-700">
+            Enrollment Information
+          </CardTitle>
+          <CardDescription className="text-blue-600">
+            Enroll a client in a health program
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {loadingData ? (
@@ -194,14 +222,25 @@ export default function NewEnrollmentPage() {
               <span className="ml-2 text-teal-600">Loading data...</span>
             </div>
           ) : (
-            <form id="new-enrollment-form" onSubmit={handleSubmit} className="space-y-6">
+            <form
+              id="new-enrollment-form"
+              onSubmit={handleSubmit}
+              className="space-y-6"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="clientId" className="text-blue-700">
                     Client <span className="text-red-500">*</span>
                   </Label>
-                  <Select value={formData.clientId} onValueChange={(value) => handleSelectChange("clientId", value)}>
-                    <SelectTrigger className={errors.clientId ? "border-red-300" : ""}>
+                  <Select
+                    value={formData.clientId}
+                    onValueChange={(value) =>
+                      handleSelectChange("clientId", value)
+                    }
+                  >
+                    <SelectTrigger
+                      className={errors.clientId ? "border-red-300" : ""}
+                    >
                       <SelectValue placeholder="Select a client" />
                     </SelectTrigger>
                     <SelectContent>
@@ -212,15 +251,24 @@ export default function NewEnrollmentPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.clientId && <p className="text-sm text-red-500">{errors.clientId}</p>}
+                  {errors.clientId && (
+                    <p className="text-sm text-red-500">{errors.clientId}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="programId" className="text-blue-700">
                     Program <span className="text-red-500">*</span>
                   </Label>
-                  <Select value={formData.programId} onValueChange={(value) => handleSelectChange("programId", value)}>
-                    <SelectTrigger className={errors.programId ? "border-red-300" : ""}>
+                  <Select
+                    value={formData.programId}
+                    onValueChange={(value) =>
+                      handleSelectChange("programId", value)
+                    }
+                  >
+                    <SelectTrigger
+                      className={errors.programId ? "border-red-300" : ""}
+                    >
                       <SelectValue placeholder="Select a program" />
                     </SelectTrigger>
                     <SelectContent>
@@ -231,7 +279,9 @@ export default function NewEnrollmentPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.programId && <p className="text-sm text-red-500">{errors.programId}</p>}
+                  {errors.programId && (
+                    <p className="text-sm text-red-500">{errors.programId}</p>
+                  )}
                 </div>
               </div>
 
@@ -240,7 +290,11 @@ export default function NewEnrollmentPage() {
                   Status <span className="text-red-500">*</span>
                 </Label>
                 {/* Note: Status is required but not part of validation errors state */}
-                <RadioGroup value={formData.status} onValueChange={handleRadioChange} className="flex space-x-4">
+                <RadioGroup
+                  value={formData.status}
+                  onValueChange={handleRadioChange}
+                  className="flex space-x-4"
+                >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="active" id="active" />
                     <Label htmlFor="active">Active</Label>
@@ -282,7 +336,9 @@ export default function NewEnrollmentPage() {
             type="submit"
             form="new-enrollment-form"
             className="bg-teal-600 hover:bg-teal-700"
-            disabled={isLoading || loadingData || !clients.length || !programs.length} // Disable if data is loading or lists are empty
+            disabled={
+              isLoading || loadingData || !clients.length || !programs.length
+            } // Disable if data is loading or lists are empty
           >
             {isLoading ? (
               <>

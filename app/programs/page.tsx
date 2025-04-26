@@ -5,11 +5,28 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isSameDay } from "date-fns";
 import { Search, Plus, Filter, X, CalendarIcon } from "lucide-react";
@@ -30,15 +47,15 @@ export default function ProgramsPage() {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [showFilters, setShowFilters] = useState(false);
 
-
   const fetchPrograms = useCallback(async () => {
     setLoading(true);
     try {
-      const res: PaginatedResponse<HealthProgram> = await programApi.getPrograms(
-        currentPage,
-        itemsPerPage,
-        appliedSearchTerm,
-      );
+      const res: PaginatedResponse<HealthProgram> =
+        await programApi.getPrograms(
+          currentPage,
+          itemsPerPage,
+          appliedSearchTerm,
+        );
 
       setPrograms(res.results);
       setTotalPages(res.totalPages);
@@ -49,14 +66,13 @@ export default function ProgramsPage() {
     }
   }, [currentPage, itemsPerPage, appliedSearchTerm]);
 
-
   useEffect(() => {
     fetchPrograms();
   }, [fetchPrograms]);
 
-
   const filteredPrograms = programs.filter((program) => {
-    const matchesDate = !dateFilter || isSameDay(new Date(program.createdAt), dateFilter);
+    const matchesDate =
+      !dateFilter || isSameDay(new Date(program.createdAt), dateFilter);
 
     return matchesDate;
   });
@@ -67,7 +83,7 @@ export default function ProgramsPage() {
   };
 
   const handleApplyFilters = () => {
-      setShowFilters(false);
+    setShowFilters(false);
   };
 
   const handlePageChange = (pageNumber: number) => {
@@ -81,7 +97,6 @@ export default function ProgramsPage() {
     setAppliedSearchTerm("");
     setCurrentPage(1);
   };
-
 
   const displayPrograms = filteredPrograms;
 
@@ -98,14 +113,14 @@ export default function ProgramsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 bg-white border-gray-200 focus-visible:ring-teal-500 rounded-full flex-grow"
               />
-               <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleApplySearch}
-                  className="ml-2 h-9 text-xs border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-full"
-               >
-                  Search
-               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleApplySearch}
+                className="ml-2 h-9 text-xs border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-full"
+              >
+                Search
+              </Button>
             </div>
             <div className="flex gap-2">
               <Popover open={showFilters} onOpenChange={setShowFilters}>
@@ -118,7 +133,7 @@ export default function ProgramsPage() {
                     <Filter className="h-3.5 w-3.5" />
                     Filters
                     <Badge className="ml-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
-                      {(dateFilter ? 1 : 0)}
+                      {dateFilter ? 1 : 0}
                     </Badge>
                   </Button>
                 </PopoverTrigger>
@@ -137,7 +152,9 @@ export default function ProgramsPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-700">Created Date</label>
+                      <label className="text-xs font-medium text-gray-700">
+                        Created Date
+                      </label>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
@@ -146,7 +163,9 @@ export default function ProgramsPage() {
                             className="w-full justify-start text-left font-normal h-8 text-xs"
                           >
                             <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                            {dateFilter ? format(dateFilter, "PPP") : "Select date"}
+                            {dateFilter
+                              ? format(dateFilter, "PPP")
+                              : "Select date"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -161,7 +180,12 @@ export default function ProgramsPage() {
                     </div>
 
                     <div className="flex justify-between pt-2">
-                      <Button variant="outline" size="sm" onClick={() => setShowFilters(false)} className="text-xs h-8">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowFilters(false)}
+                        className="text-xs h-8"
+                      >
                         Cancel
                       </Button>
                       <Button
@@ -177,7 +201,10 @@ export default function ProgramsPage() {
               </Popover>
 
               <Link href="/programs/new">
-                <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs h-9 px-3 flex items-center gap-1">
+                <Button
+                  size="sm"
+                  className="bg-teal-600 hover:bg-teal-700 text-xs h-9 px-3 flex items-center gap-1"
+                >
                   <Plus className="h-3.5 w-3.5" />
                   Add Program
                 </Button>
@@ -187,34 +214,44 @@ export default function ProgramsPage() {
 
           {(dateFilter || appliedSearchTerm) && (
             <div className="flex flex-wrap gap-2 mt-3">
-               {appliedSearchTerm && (
-                 <Badge
-                   variant="outline"
-                   className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
-                 >
-                   Search: "{appliedSearchTerm}"
-                   <X className="h-3 w-3 cursor-pointer" onClick={() => { setSearchTerm(""); setAppliedSearchTerm(""); setCurrentPage(1); }} />
-                 </Badge>
-               )}
+              {appliedSearchTerm && (
+                <Badge
+                  variant="outline"
+                  className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
+                >
+                  Search: "{appliedSearchTerm}"
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setAppliedSearchTerm("");
+                      setCurrentPage(1);
+                    }}
+                  />
+                </Badge>
+              )}
               {dateFilter && (
                 <Badge
                   variant="outline"
                   className="bg-blue-50 text-blue-700 border-blue-200 flex items-center gap-1 px-2 py-1"
                 >
                   Created Date: {format(dateFilter, "PP")}
-                  <X className="h-3 w-3 cursor-pointer" onClick={() => setDateFilter(undefined)} />
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setDateFilter(undefined)}
+                  />
                 </Badge>
               )}
 
               {(dateFilter || appliedSearchTerm) && (
-                 <Button
-                   variant="ghost"
-                   size="sm"
-                   onClick={resetFilters}
-                   className="text-xs h-6 px-2 text-gray-500 hover:text-gray-700"
-                 >
-                   Clear all
-                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetFilters}
+                  className="text-xs h-6 px-2 text-gray-500 hover:text-gray-700"
+                >
+                  Clear all
+                </Button>
               )}
             </div>
           )}
@@ -226,7 +263,9 @@ export default function ProgramsPage() {
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg font-medium text-gray-700">
               Programs
-              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">{filteredPrograms.length}</Badge>
+              <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">
+                {filteredPrograms.length}
+              </Badge>
             </CardTitle>
           </div>
         </CardHeader>
@@ -241,30 +280,46 @@ export default function ProgramsPage() {
               ))}
             </div>
           ) : displayPrograms.length === 0 ? (
-             <div className="text-center py-8 text-gray-500">
-                No programs found matching the criteria. Try adjusting your search or filters.
-             </div>
+            <div className="text-center py-8 text-gray-500">
+              No programs found matching the criteria. Try adjusting your search
+              or filters.
+            </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50 hover:bg-gray-50">
-                      <TableHead className="text-gray-600 font-medium">Program Name</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Description</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Created Date</TableHead>
-                      <TableHead className="text-gray-600 font-medium text-right">Actions</TableHead>
+                      <TableHead className="text-gray-600 font-medium">
+                        Program Name
+                      </TableHead>
+                      <TableHead className="text-gray-600 font-medium">
+                        Description
+                      </TableHead>
+                      <TableHead className="text-gray-600 font-medium">
+                        Created Date
+                      </TableHead>
+                      <TableHead className="text-gray-600 font-medium text-right">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredPrograms.length > 0 ? (
                       filteredPrograms.map((program) => (
-                        <TableRow key={program.id} className="hover:bg-gray-50/80 border-b border-gray-100">
-                          <TableCell className="font-medium text-teal-700">{program.name}</TableCell>
+                        <TableRow
+                          key={program.id}
+                          className="hover:bg-gray-50/80 border-b border-gray-100"
+                        >
+                          <TableCell className="font-medium text-teal-700">
+                            {program.name}
+                          </TableCell>
                           <TableCell className="max-w-md truncate">
                             {program.description || "No description available"}
                           </TableCell>
-                          <TableCell>{new Date(program.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {new Date(program.createdAt).toLocaleDateString()}
+                          </TableCell>
                           <TableCell className="text-right">
                             <Link href={`/programs/${program.id}`}>
                               <Button
@@ -280,8 +335,12 @@ export default function ProgramsPage() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                          No programs found. Try adjusting your search or filters.
+                        <TableCell
+                          colSpan={4}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          No programs found. Try adjusting your search or
+                          filters.
                         </TableCell>
                       </TableRow>
                     )}
@@ -301,21 +360,23 @@ export default function ProgramsPage() {
                     >
                       &lt;
                     </Button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handlePageChange(page)}
-                        className={
-                          currentPage === page
-                            ? "h-8 w-8 p-0 bg-teal-600 hover:bg-teal-700"
-                            : "h-8 w-8 p-0 border-gray-200"
-                        }
-                      >
-                        {page}
-                      </Button>
-                    ))}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className={
+                            currentPage === page
+                              ? "h-8 w-8 p-0 bg-teal-600 hover:bg-teal-700"
+                              : "h-8 w-8 p-0 border-gray-200"
+                          }
+                        >
+                          {page}
+                        </Button>
+                      ),
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

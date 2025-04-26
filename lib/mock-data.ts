@@ -108,7 +108,7 @@ export const mockClients = [
     userId: "u2",
     programs: [{ id: "p10", name: "COVID-19 Recovery" }],
   },
-]
+];
 
 // Mock data for health programs
 export const mockPrograms = [
@@ -136,7 +136,8 @@ export const mockPrograms = [
   {
     id: "p4",
     name: "Diabetes Management",
-    description: "Program to help patients manage diabetes through education and lifestyle changes.",
+    description:
+      "Program to help patients manage diabetes through education and lifestyle changes.",
     createdAt: "2022-12-15T11:45:00Z",
     updatedAt: "2023-01-30T16:00:00Z",
   },
@@ -150,28 +151,32 @@ export const mockPrograms = [
   {
     id: "p6",
     name: "Respiratory Health",
-    description: "Support for patients with respiratory conditions like asthma and COPD.",
+    description:
+      "Support for patients with respiratory conditions like asthma and COPD.",
     createdAt: "2022-12-25T15:15:00Z",
     updatedAt: "2023-02-10T14:45:00Z",
   },
   {
     id: "p7",
     name: "Post-Surgery Recovery",
-    description: "Program to assist patients in recovery after surgical procedures.",
+    description:
+      "Program to assist patients in recovery after surgical procedures.",
     createdAt: "2023-01-01T09:30:00Z",
     updatedAt: "2023-02-15T11:15:00Z",
   },
   {
     id: "p8",
     name: "Mental Health Support",
-    description: "Counseling and support for patients with mental health conditions.",
+    description:
+      "Counseling and support for patients with mental health conditions.",
     createdAt: "2023-01-05T14:00:00Z",
     updatedAt: "2023-02-20T09:45:00Z",
   },
   {
     id: "p9",
     name: "Cardiovascular Health",
-    description: "Program focused on heart health and prevention of cardiovascular diseases.",
+    description:
+      "Program focused on heart health and prevention of cardiovascular diseases.",
     createdAt: "2023-01-10T10:45:00Z",
     updatedAt: "2023-02-25T13:30:00Z",
   },
@@ -182,7 +187,7 @@ export const mockPrograms = [
     createdAt: "2023-01-15T16:15:00Z",
     updatedAt: "2023-03-01T15:00:00Z",
   },
-]
+];
 
 // Mock data for enrollments
 export const mockEnrollments = [
@@ -306,7 +311,7 @@ export const mockEnrollments = [
     client: mockClients.find((c) => c.id === "c8"),
     program: mockPrograms.find((p) => p.id === "p10"),
   },
-]
+];
 
 // Mock data for users (doctors)
 export const mockUsers = [
@@ -350,4 +355,4 @@ export const mockUsers = [
     createdAt: "2022-11-10T13:15:00Z",
     updatedAt: "2023-02-05T09:30:00Z",
   },
-]
+];

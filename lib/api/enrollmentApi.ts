@@ -26,7 +26,7 @@ export const enrollmentApi = {
     clientId?: string,
     programId?: string,
     status?: "active" | "completed" | "dropped",
-    sortBy?: string
+    sortBy?: string,
   ): Promise<PaginatedResponse<Enrollment>> {
     let query = `?page=${page}&limit=${limit}`;
     if (clientId) query += `&clientId=${encodeURIComponent(clientId)}`;
@@ -35,7 +35,7 @@ export const enrollmentApi = {
     if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`;
 
     return apiService.request<PaginatedResponse<Enrollment>>(
-      `/enrollments${query}`
+      `/enrollments${query}`,
     );
   },
 
@@ -46,13 +46,13 @@ export const enrollmentApi = {
     clientId: string,
     page = 1,
     limit = 10,
-    sortBy?: string
+    sortBy?: string,
   ): Promise<PaginatedResponse<Enrollment>> {
     let query = `?page=${page}&limit=${limit}`;
     if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`;
 
     return apiService.request<PaginatedResponse<Enrollment>>(
-      `/enrollments/client/${clientId}${query}`
+      `/enrollments/client/${clientId}${query}`,
     );
   },
 
@@ -64,7 +64,7 @@ export const enrollmentApi = {
    */
   updateEnrollment(
     enrollmentId: string,
-    enrollmentData: EnrollmentUpdate
+    enrollmentData: EnrollmentUpdate,
   ): Promise<Enrollment> {
     return apiService.request<Enrollment>(`/enrollments/${enrollmentId}`, {
       method: "PATCH",

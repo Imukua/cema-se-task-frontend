@@ -6,7 +6,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +24,6 @@ import { Loader2 } from "lucide-react";
 import { programApi } from "@/lib/api/programApi";
 // Assume necessary types like HealthProgramCreate and HealthProgram exist
 import { HealthProgramCreate, HealthProgram } from "@/lib/types/api";
-
 
 export default function NewProgramPage() {
   const router = useRouter();
@@ -36,7 +42,9 @@ export default function NewProgramPage() {
     // Add error states for other required fields if necessary
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -44,7 +52,8 @@ export default function NewProgramPage() {
     }));
 
     // Clear error when user types
-    if (errors[name as keyof typeof errors]) { // Ensure 'name' is a key of errors
+    if (errors[name as keyof typeof errors]) {
+      // Ensure 'name' is a key of errors
       setErrors((prev) => ({
         ...prev,
         [name]: "",
@@ -71,11 +80,11 @@ export default function NewProgramPage() {
     e.preventDefault();
 
     if (!validateForm()) {
-        toast({
-            title: "Validation Error",
-            description: "Please fill out all required fields correctly.",
-            variant: "destructive",
-        });
+      toast({
+        title: "Validation Error",
+        description: "Please fill out all required fields correctly.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -84,7 +93,8 @@ export default function NewProgramPage() {
     try {
       // Call the actual API to create the program
       // Assuming programApi.createProgram takes HealthProgramCreate object and returns created HealthProgram
-      const createdProgram: HealthProgram = await programApi.createProgram(formData);
+      const createdProgram: HealthProgram =
+        await programApi.createProgram(formData);
 
       toast({
         title: "Program Created",
@@ -94,7 +104,8 @@ export default function NewProgramPage() {
 
       // Redirect to programs page or the new program's detail page
       router.push("/programs"); // or `/programs/${createdProgram.id}`
-    } catch (error: any) { // Use 'any' or a more specific error type if available
+    } catch (error: any) {
+      // Use 'any' or a more specific error type if available
       console.error("Error creating program:", error);
       toast({
         title: "Error",
@@ -119,11 +130,19 @@ export default function NewProgramPage() {
 
       <Card className="bg-white/80 border-teal-100">
         <CardHeader>
-          <CardTitle className="text-xl text-teal-700">Program Information</CardTitle>
-          <CardDescription className="text-blue-600">Enter the details for the new health program</CardDescription>
+          <CardTitle className="text-xl text-teal-700">
+            Program Information
+          </CardTitle>
+          <CardDescription className="text-blue-600">
+            Enter the details for the new health program
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form id="new-program-form" onSubmit={handleSubmit} className="space-y-6">
+          <form
+            id="new-program-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             <div className="space-y-2">
               <Label htmlFor="name" className="text-blue-700">
                 Program Name <span className="text-red-500">*</span>
@@ -136,7 +155,9 @@ export default function NewProgramPage() {
                 placeholder="e.g., HIV Prevention"
                 className={errors.name ? "border-red-300" : ""}
               />
-              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-sm text-red-500">{errors.name}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -160,7 +181,12 @@ export default function NewProgramPage() {
               Cancel
             </Button>
           </Link>
-          <Button type="submit" form="new-program-form" className="bg-teal-600 hover:bg-teal-700" disabled={isLoading}>
+          <Button
+            type="submit"
+            form="new-program-form"
+            className="bg-teal-600 hover:bg-teal-700"
+            disabled={isLoading}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

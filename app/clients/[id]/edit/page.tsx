@@ -6,7 +6,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,8 +27,8 @@ import { clientApi } from "@/lib/api/clientApi";
 // Assume necessary types like Client and ClientUpdate exist
 import { Client, ClientUpdate } from "@/lib/types/api";
 
-
-export default function EditClientPage() { // Renamed component
+export default function EditClientPage() {
+  // Renamed component
   const router = useRouter();
   const { toast } = useToast();
   const { id } = useParams() as { id: string }; // Get client ID from URL
@@ -77,21 +84,24 @@ export default function EditClientPage() { // Renamed component
     }
   }, [id]); // Re-run effect if ID changes
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error when user types
-    if (errors[name as keyof typeof errors]) {
-      setErrors((prev) => ({
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({
         ...prev,
-        [name]: "",
+        [name]: value,
       }));
-    }
-  }, [errors]); // Depend on errors to correctly clear them
+
+      // Clear error when user types
+      if (errors[name as keyof typeof errors]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+    },
+    [errors],
+  ); // Depend on errors to correctly clear them
 
   const handleRadioChange = useCallback((value: string) => {
     setFormData((prev) => ({
@@ -105,30 +115,33 @@ export default function EditClientPage() { // Renamed component
     // Update with all required fields for update. Assuming fullName, dob, contact are required for update.
     const newErrors = { fullName: "", dob: "", contact: "" };
 
-    if (!formData.fullName?.trim()) { // Use optional chaining as ClientUpdate might have optional fields
+    if (!formData.fullName?.trim()) {
+      // Use optional chaining as ClientUpdate might have optional fields
       newErrors.fullName = "Full name is required";
       isValid = false;
     }
 
-    if (!formData.dob?.trim()) { // dob is likely required for update as well
+    if (!formData.dob?.trim()) {
+      // dob is likely required for update as well
       newErrors.dob = "Date of birth is required";
       isValid = false;
     } else {
       try {
-         const dobDate = new Date(formData.dob);
-         const today = new Date();
-         // Basic validation: check if date is valid and not in the future
-         if (isNaN(dobDate.getTime()) || dobDate > today) {
-           newErrors.dob = "Please enter a valid date of birth in the past";
-           isValid = false;
-         }
+        const dobDate = new Date(formData.dob);
+        const today = new Date();
+        // Basic validation: check if date is valid and not in the future
+        if (isNaN(dobDate.getTime()) || dobDate > today) {
+          newErrors.dob = "Please enter a valid date of birth in the past";
+          isValid = false;
+        }
       } catch (e) {
-         newErrors.dob = "Invalid date format";
-         isValid = false;
+        newErrors.dob = "Invalid date format";
+        isValid = false;
       }
     }
 
-    if (!formData.contact?.trim()) { // contact is likely required for update as well
+    if (!formData.contact?.trim()) {
+      // contact is likely required for update as well
       newErrors.contact = "Contact information is required";
       isValid = false;
     }
@@ -143,11 +156,11 @@ export default function EditClientPage() { // Renamed component
     e.preventDefault();
 
     if (!validateForm()) {
-        toast({
-            title: "Validation Error",
-            description: "Please fill out all required fields correctly.",
-            variant: "destructive",
-        });
+      toast({
+        title: "Validation Error",
+        description: "Please fill out all required fields correctly.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -166,7 +179,8 @@ export default function EditClientPage() { // Renamed component
 
       // Redirect to the client details page
       router.push(`/clients/${id}`);
-    } catch (error: any) { // Use 'any' or a more specific error type if available
+    } catch (error: any) {
+      // Use 'any' or a more specific error type if available
       console.error("Error updating client:", error);
       toast({
         title: "Error",
@@ -180,72 +194,95 @@ export default function EditClientPage() { // Renamed component
 
   // Show loading skeleton while fetching initial data
   if (loadingData) {
-     return (
-        <div className="space-y-6">
-             <div className="flex justify-between items-center">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="h-10 w-24" />
-            </div>
-            <Card className="bg-white/80 border-teal-100">
-                 <CardHeader><Skeleton className="h-7 w-40" /></CardHeader>
-                 <CardContent className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <Skeleton className="h-12 w-full" />
-                          <Skeleton className="h-12 w-full" />
-                          <Skeleton className="h-12 w-full" />
-                          <Skeleton className="h-12 w-full" />
-                      </div>
-                      <Skeleton className="h-24 w-full" />
-                 </CardContent>
-                 <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
-                      <Skeleton className="h-10 w-20" />
-                      <Skeleton className="h-10 w-24" />
-                 </CardFooter>
-            </Card>
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-24" />
         </div>
-     );
+        <Card className="bg-white/80 border-teal-100">
+          <CardHeader>
+            <Skeleton className="h-7 w-40" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+          <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-24" />
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   // Show Client Not Found message if fetching failed or client is null
   if (!client) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <h1 className="text-2xl font-bold text-red-600 mb-4">Client Not Found</h1>
-        <p className="text-gray-600 mb-6">The client you are looking for does not exist or an error occurred.</p>
+        <h1 className="text-2xl font-bold text-red-600 mb-4">
+          Client Not Found
+        </h1>
+        <p className="text-gray-600 mb-6">
+          The client you are looking for does not exist or an error occurred.
+        </p>
         <Link href="/clients">
-          <Button className="bg-teal-600 hover:bg-teal-700">Return to Clients List</Button>
+          <Button className="bg-teal-600 hover:bg-teal-700">
+            Return to Clients List
+          </Button>
         </Link>
       </div>
     );
   }
 
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-         <div className="flex items-center gap-2">
-              <Link href={`/clients/${id}`}> {/* Link back to client details */}
-                <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700">
-                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
-                </Button>
-              </Link>
-              <h1 className="text-2xl font-bold text-teal-700">Edit Client: {client.fullName}</h1>
-         </div>
-         {/* Cancel links back to client details */}
-         <Link href={`/clients/${id}`}>
-             <Button variant="outline" className="border-blue-200 text-blue-600">
-                Cancel
-             </Button>
-         </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/clients/${id}`}>
+            {" "}
+            {/* Link back to client details */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-teal-700">
+            Edit Client: {client.fullName}
+          </h1>
+        </div>
+        {/* Cancel links back to client details */}
+        <Link href={`/clients/${id}`}>
+          <Button variant="outline" className="border-blue-200 text-blue-600">
+            Cancel
+          </Button>
+        </Link>
       </div>
 
       <Card className="bg-white/80 border-teal-100">
         <CardHeader>
-          <CardTitle className="text-xl text-teal-700">Client Information</CardTitle>
-          <CardDescription className="text-blue-600">Update the client's personal details below</CardDescription>
+          <CardTitle className="text-xl text-teal-700">
+            Client Information
+          </CardTitle>
+          <CardDescription className="text-blue-600">
+            Update the client's personal details below
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form id="edit-client-form" onSubmit={handleSubmit} className="space-y-6">
+          <form
+            id="edit-client-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-blue-700">
@@ -259,7 +296,9 @@ export default function EditClientPage() { // Renamed component
                   placeholder="John Smith"
                   className={errors.fullName ? "border-red-300" : ""}
                 />
-                {errors.fullName && <p className="text-sm text-red-500">{errors.fullName}</p>}
+                {errors.fullName && (
+                  <p className="text-sm text-red-500">{errors.fullName}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -274,14 +313,20 @@ export default function EditClientPage() { // Renamed component
                   onChange={handleChange}
                   className={errors.dob ? "border-red-300" : ""}
                 />
-                {errors.dob && <p className="text-sm text-red-500">{errors.dob}</p>}
+                {errors.dob && (
+                  <p className="text-sm text-red-500">{errors.dob}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label className="text-blue-700">
                   Gender <span className="text-red-500">*</span>
                 </Label>
-                <RadioGroup value={formData.gender} onValueChange={handleRadioChange} className="flex space-x-4">
+                <RadioGroup
+                  value={formData.gender}
+                  onValueChange={handleRadioChange}
+                  className="flex space-x-4"
+                >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="Male" id="male" />
                     <Label htmlFor="male">Male</Label>
@@ -309,7 +354,9 @@ export default function EditClientPage() { // Renamed component
                   placeholder="Phone number or email"
                   className={errors.contact ? "border-red-300" : ""}
                 />
-                {errors.contact && <p className="text-sm text-red-500">{errors.contact}</p>}
+                {errors.contact && (
+                  <p className="text-sm text-red-500">{errors.contact}</p>
+                )}
               </div>
             </div>
 
@@ -326,7 +373,7 @@ export default function EditClientPage() { // Renamed component
                 className="min-h-[100px]"
               />
             </div>
-             {/* userId error is removed as it's not required for update form */}
+            {/* userId error is removed as it's not required for update form */}
           </form>
         </CardContent>
         <CardFooter className="flex justify-end space-x-4 border-t border-teal-100 pt-4">
@@ -336,7 +383,12 @@ export default function EditClientPage() { // Renamed component
               Cancel
             </Button>
           </Link>
-          <Button type="submit" form="edit-client-form" className="bg-teal-600 hover:bg-teal-700" disabled={isLoading || loadingData || !client}>
+          <Button
+            type="submit"
+            form="edit-client-form"
+            className="bg-teal-600 hover:bg-teal-700"
+            disabled={isLoading || loadingData || !client}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
