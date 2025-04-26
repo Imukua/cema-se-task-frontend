@@ -419,13 +419,15 @@ export default function EnrollmentsPage() {
                         </TableCell>
                         <TableCell>{new Date(enrollment.enrolledAt).toLocaleDateString()}</TableCell>
                         <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
-                                >
-                              View Details
-                            </Button>
+                        <Link href={`/enrollments/${enrollment.id}/edit`}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
+                              >
+                                Edit Details
+                              </Button>
+                            </Link>
                         </TableCell>
                       </TableRow>
                     ))}
