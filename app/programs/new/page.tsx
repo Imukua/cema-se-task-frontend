@@ -1,91 +1,110 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/components/ui/use-toast"
-import { Loader2 } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
+
+// Import API service
+import { programApi } from "@/lib/api/programApi";
+// Assume necessary types like HealthProgramCreate and HealthProgram exist
+import { HealthProgramCreate, HealthProgram } from "@/lib/types/api";
+
 
 export default function NewProgramPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Assuming HealthProgramCreate includes these fields
+  const [formData, setFormData] = useState<HealthProgramCreate>({
     name: "",
     description: "",
-  })
+    // Add any other required fields for HealthProgramCreate based on your API
+  });
+
   const [errors, setErrors] = useState({
     name: "",
-  })
+    // Add error states for other required fields if necessary
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
+    }));
 
     // Clear error when user types
-    if (errors[name as keyof typeof errors]) {
+    if (errors[name as keyof typeof errors]) { // Ensure 'name' is a key of errors
       setErrors((prev) => ({
         ...prev,
         [name]: "",
-      }))
+      }));
     }
-  }
+  };
 
   const validateForm = () => {
-    let isValid = true
-    const newErrors = { name: "" }
+    let isValid = true;
+    const newErrors = { name: "" }; // Update with all required fields
 
     if (!formData.name.trim()) {
-      newErrors.name = "Program name is required"
-      isValid = false
+      newErrors.name = "Program name is required";
+      isValid = false;
     }
 
-    setErrors(newErrors)
-    return isValid
-  }
+    // Add validation for other required fields here
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+        toast({
+            title: "Validation Error",
+            description: "Please fill out all required fields correctly.",
+            variant: "destructive",
+        });
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      // Call the actual API to create the program
+      // Assuming programApi.createProgram takes HealthProgramCreate object and returns created HealthProgram
+      const createdProgram: HealthProgram = await programApi.createProgram(formData);
 
-      // Mock successful program creation
       toast({
         title: "Program Created",
-        description: `${formData.name} has been successfully added.`,
+        description: `${createdProgram.name} has been successfully added.`,
         variant: "default",
-      })
+      });
 
-      // Redirect to programs page
-      router.push("/programs")
-    } catch (error) {
+      // Redirect to programs page or the new program's detail page
+      router.push("/programs"); // or `/programs/${createdProgram.id}`
+    } catch (error: any) { // Use 'any' or a more specific error type if available
+      console.error("Error creating program:", error);
       toast({
         title: "Error",
-        description: "An error occurred while creating the program. Please try again.",
+        description: `Failed to create program. ${error.message || "Please try again."}`,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -127,7 +146,7 @@ export default function NewProgramPage() {
               <Textarea
                 id="description"
                 name="description"
-                value={formData.description}
+                value={formData.description ?? ""}
                 onChange={handleChange}
                 placeholder="Provide a detailed description of the program"
                 className="min-h-[150px]"
@@ -154,5 +173,5 @@ export default function NewProgramPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
