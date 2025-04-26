@@ -105,7 +105,7 @@ export default function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Link href="/settings" className="w-full">
+                      <Link href="/profile" className="w-full">
                         Settings
                       </Link>
                     </DropdownMenuItem>
