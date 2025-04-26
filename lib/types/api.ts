@@ -70,6 +70,7 @@ export interface Client {
 }
 
 export interface ClientCreate {
+  userId?: string;
   fullName: string;
   dob: string;
   gender: string;
