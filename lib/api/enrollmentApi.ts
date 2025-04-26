@@ -1,5 +1,10 @@
-import { apiService } from "./apiService"
-import type { Enrollment, EnrollmentCreate, EnrollmentUpdate, PaginatedResponse } from "../types/api"
+import { apiService } from "./apiService";
+import type {
+  Enrollment,
+  EnrollmentCreate,
+  EnrollmentUpdate,
+  PaginatedResponse,
+} from "../types/api";
 
 export const enrollmentApi = {
   /**
@@ -9,7 +14,7 @@ export const enrollmentApi = {
     return apiService.request<Enrollment>("/enrollments", {
       method: "POST",
       body: enrollmentData,
-    })
+    });
   },
 
   /**
@@ -21,15 +26,17 @@ export const enrollmentApi = {
     clientId?: string,
     programId?: string,
     status?: "active" | "completed" | "dropped",
-    sortBy?: string,
+    sortBy?: string
   ): Promise<PaginatedResponse<Enrollment>> {
-    let query = `?page=${page}&limit=${limit}`
-    if (clientId) query += `&clientId=${encodeURIComponent(clientId)}`
-    if (programId) query += `&programId=${encodeURIComponent(programId)}`
-    if (status) query += `&status=${encodeURIComponent(status)}`
-    if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`
+    let query = `?page=${page}&limit=${limit}`;
+    if (clientId) query += `&clientId=${encodeURIComponent(clientId)}`;
+    if (programId) query += `&programId=${encodeURIComponent(programId)}`;
+    if (status) query += `&status=${encodeURIComponent(status)}`;
+    if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`;
 
-    return apiService.request<PaginatedResponse<Enrollment>>(`/enrollments${query}`)
+    return apiService.request<PaginatedResponse<Enrollment>>(
+      `/enrollments${query}`
+    );
   },
 
   /**
@@ -39,22 +46,30 @@ export const enrollmentApi = {
     clientId: string,
     page = 1,
     limit = 10,
-    sortBy?: string,
+    sortBy?: string
   ): Promise<PaginatedResponse<Enrollment>> {
-    let query = `?page=${page}&limit=${limit}`
-    if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`
+    let query = `?page=${page}&limit=${limit}`;
+    if (sortBy) query += `&sortBy=${encodeURIComponent(sortBy)}`;
 
-    return apiService.request<PaginatedResponse<Enrollment>>(`/enrollments/client/${clientId}${query}`)
+    return apiService.request<PaginatedResponse<Enrollment>>(
+      `/enrollments/client/${clientId}${query}`
+    );
   },
 
+  getEnrollmentById(enrollmentId: string): Promise<Enrollment> {
+    return apiService.request<Enrollment>(`/enrollments/${enrollmentId}`);
+  },
   /**
    * Update an enrollment
    */
-  updateEnrollment(enrollmentId: string, enrollmentData: EnrollmentUpdate): Promise<Enrollment> {
+  updateEnrollment(
+    enrollmentId: string,
+    enrollmentData: EnrollmentUpdate
+  ): Promise<Enrollment> {
     return apiService.request<Enrollment>(`/enrollments/${enrollmentId}`, {
       method: "PATCH",
       body: enrollmentData,
-    })
+    });
   },
 
   /**
@@ -63,6 +78,6 @@ export const enrollmentApi = {
   deleteEnrollment(enrollmentId: string): Promise<void> {
     return apiService.request<void>(`/enrollments/${enrollmentId}`, {
       method: "DELETE",
-    })
+    });
   },
-}
+};
