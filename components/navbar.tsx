@@ -18,7 +18,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth(); // Access isAuthenticated
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -51,12 +51,16 @@ export default function Navbar() {
       .toUpperCase();
   };
 
+  // Determine the logo link destination based on authentication status
+  const logoHref = isAuthenticated ? "/" : "/landing";
+
   return (
     <nav className="bg-white border-b border-teal-100 shadow-sm">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center">
+            {/* Use the dynamically determined logoHref */}
+            <Link href={logoHref} className="flex items-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-8 w-8 text-teal-600"
@@ -114,7 +118,9 @@ export default function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Link href="/profile" className="w-full">
+                      <Link href="/settings" className="w-full">
+                        {" "}
+                        {/* Changed to /settings */}
                         Settings
                       </Link>
                     </DropdownMenuItem>
@@ -183,6 +189,13 @@ export default function Navbar() {
                   onClick={toggleMenu}
                 >
                   Profile
+                </Link>
+                <Link
+                  href="/settings" // Changed to /settings
+                  className="block px-4 py-2 text-base font-medium text-blue-600 hover:bg-blue-50"
+                  onClick={toggleMenu}
+                >
+                  Settings
                 </Link>
                 <button
                   onClick={handleLogout}
