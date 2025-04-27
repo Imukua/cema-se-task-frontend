@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     if (isLoading) return;
 
     // Define paths that are always accessible
-    const publicPaths = ["/login", "/register", "/api-docs"];
+    const publicPaths = ["/login", "/register", "/api-docs", "/landing"];
     const isPublicPath = publicPaths.some((path) => pathname?.includes(path));
 
     // If not authenticated and not on a public page, redirect to login
