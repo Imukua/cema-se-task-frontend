@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, KeyRound, Mail } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import type { UserLogin } from "@/lib/types/api";
 
@@ -99,77 +99,132 @@ export default function LoginPage() {
     }
   };
 
+  const useTestCredentials = () => {
+    setFormData({
+      email: "testdoctor@test.com",
+      password: "testpass",
+    });
+    // Clear any existing errors
+    setFormErrors({ email: "", password: "" });
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <Card className="w-full max-w-md bg-white/90 border-teal-100">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center text-teal-700">
-            Login
+    <div className="min-h-[80vh] flex items-center justify-center bg-gradient-to-b from-blue-50 to-teal-50 py-6 px-4">
+      <Card className="w-full max-w-md border-teal-100 shadow-md bg-white/95">
+        <CardHeader className="pb-2 space-y-1">
+          <div className="flex items-center justify-center mb-1">
+            <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center">
+              <KeyRound className="h-5 w-5 text-teal-600" />
+            </div>
+          </div>
+          <CardTitle className="text-xl font-bold text-center text-teal-700">
+            Health Information System
           </CardTitle>
           <CardDescription className="text-center text-blue-600">
-            Enter your credentials to access your account
+            Sign in to your account
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="doctor@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                className={formErrors.email ? "border-red-300" : ""}
-              />
+
+        <CardContent className="pt-3 pb-2">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1">
+              <Label
+                htmlFor="email"
+                className="text-blue-700 text-sm font-medium"
+              >
+                Email Address
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="doctor@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`pl-10 h-9 ${formErrors.email ? "border-red-300" : ""}`}
+                />
+              </div>
               {formErrors.email && (
-                <p className="text-sm text-red-500">{formErrors.email}</p>
+                <p className="text-xs text-red-500">{formErrors.email}</p>
               )}
             </div>
-            <div className="space-y-2">
+
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label
+                  htmlFor="password"
+                  className="text-blue-700 text-sm font-medium"
+                >
+                  Password
+                </Label>
                 <Link
                   href="/forgot-password"
                   className="text-xs text-blue-600 hover:underline"
                 >
-                  Forgot password?
+                  Forgot?
                 </Link>
               </div>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                className={formErrors.password ? "border-red-300" : ""}
-              />
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`pl-10 h-9 ${formErrors.password ? "border-red-300" : ""}`}
+                />
+              </div>
               {formErrors.password && (
-                <p className="text-sm text-red-500">{formErrors.password}</p>
+                <p className="text-xs text-red-500">{formErrors.password}</p>
               )}
             </div>
-            <Button
-              type="submit"
-              className="w-full bg-teal-600 hover:bg-teal-700"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                "Login"
-              )}
-            </Button>
+
+            <div className="pt-1 flex gap-2">
+              <Button
+                type="submit"
+                className="flex-1 bg-teal-600 hover:bg-teal-700 h-9"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="border-teal-200 text-teal-600 hover:bg-teal-50 h-9"
+                onClick={useTestCredentials}
+                disabled={isLoading}
+                title="Use test credentials: testdoctor@test.com / testpass"
+              >
+                Test Login
+              </Button>
+            </div>
           </form>
+
+          <div className="mt-3 text-center text-xs text-gray-500 bg-blue-50 rounded p-2">
+            <span className="font-medium">Test Account:</span>{" "}
+            testdoctor@test.com / testpass
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-sm text-gray-500">
+
+        <CardFooter className="flex justify-center pt-2 pb-3">
+          <p className="text-sm text-gray-600">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-blue-600 hover:underline">
+            <Link
+              href="/register"
+              className="text-blue-600 font-medium hover:underline"
+            >
               Register
             </Link>
           </p>
