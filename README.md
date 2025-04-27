@@ -6,7 +6,7 @@ The system is designed to manage clients, health programs, and program enrollmen
 ## 🚀 Live Demo
 
 You can access the live application here:  
-**[https://cemasystem.vercel.app/](https://cemasystem.vercel.app/)**
+**[https://cemasystem.vercel.app/](https://cemasystem.vercel.app/landing)**
 
 ## 🔗 Backend Repository
 
