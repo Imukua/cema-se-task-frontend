@@ -2,7 +2,7 @@ import { TokenStore } from "../auth/tokenStore";
 import type { TokenResponse, UserRefreshToken } from "../types/api";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/v1";
 
 interface ApiOptions {
   method?: string;
