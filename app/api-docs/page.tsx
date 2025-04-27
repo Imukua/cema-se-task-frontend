@@ -1,27 +1,72 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function ApiDocsPage() {
-  const [activeTab, setActiveTab] = useState("auth")
+  const [activeTab, setActiveTab] = useState("auth");
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-2">API Documentation</h1>
-      <p className="text-muted-foreground mb-6">Complete reference for the Health Information System API v1</p>
+      <h1 className="text-3xl font-bold mb-2 text-teal-700">
+        API Documentation
+      </h1>
+      <p className="text-muted-foreground mb-6">
+        Complete reference for the Health Information System API v1
+      </p>
 
-      <Tabs defaultValue="auth" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-5 mb-8">
-          <TabsTrigger value="auth">Authentication</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="programs">Programs</TabsTrigger>
-          <TabsTrigger value="enrollments">Enrollments</TabsTrigger>
+      <Tabs
+        defaultValue="auth"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
+        <TabsList className="grid grid-cols-5 mb-8 bg-teal-50 p-1 border border-teal-100">
+          <TabsTrigger
+            value="auth"
+            className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            Authentication
+          </TabsTrigger>
+          <TabsTrigger
+            value="users"
+            className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            Users
+          </TabsTrigger>
+          <TabsTrigger
+            value="clients"
+            className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            Clients
+          </TabsTrigger>
+          <TabsTrigger
+            value="programs"
+            className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            Programs
+          </TabsTrigger>
+          <TabsTrigger
+            value="enrollments"
+            className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md"
+          >
+            Enrollments
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="auth">
@@ -117,7 +162,8 @@ export default function ApiDocsPage() {
                 method: "GET",
                 path: "/v1/users",
                 description: "Get all users with pagination",
-                requestBody: "None (uses query parameters for pagination, search, and sort)",
+                requestBody:
+                  "None (uses query parameters for pagination, search, and sort)",
                 responseBody: `{
   "results": [
     {
@@ -214,7 +260,8 @@ export default function ApiDocsPage() {
                 method: "GET",
                 path: "/v1/clients",
                 description: "Get all clients with pagination",
-                requestBody: "None (uses query parameters for pagination, search, filter, and sort)",
+                requestBody:
+                  "None (uses query parameters for pagination, search, filter, and sort)",
                 responseBody: `{
   "results": [
     {
@@ -329,7 +376,8 @@ export default function ApiDocsPage() {
                 method: "GET",
                 path: "/v1/programs",
                 description: "Get all health programs with pagination",
-                requestBody: "None (uses query parameters for pagination, search, and sort)",
+                requestBody:
+                  "None (uses query parameters for pagination, search, and sort)",
                 responseBody: `{
   "results": [
     {
@@ -415,7 +463,8 @@ export default function ApiDocsPage() {
                 method: "GET",
                 path: "/v1/enrollments",
                 description: "Get all enrollments with pagination",
-                requestBody: "None (uses query parameters for pagination, filter, and sort)",
+                requestBody:
+                  "None (uses query parameters for pagination, filter, and sort)",
                 responseBody: `{
   "results": [
     {
@@ -488,7 +537,8 @@ export default function ApiDocsPage() {
                 method: "GET",
                 path: "/v1/enrollments/client/:clientId",
                 description: "Get all enrollments for a specific client",
-                requestBody: "None (uses query parameters for pagination and sort)",
+                requestBody:
+                  "None (uses query parameters for pagination and sort)",
                 responseBody: `{
   "results": [
     {
@@ -554,55 +604,74 @@ export default function ApiDocsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
 
 interface ApiSectionProps {
-  title: string
-  description: string
+  title: string;
+  description: string;
   endpoints: {
-    method: string
-    path: string
-    description: string
-    requestBody: string
-    responseBody: string
-  }[]
+    method: string;
+    path: string;
+    description: string;
+    requestBody: string;
+    responseBody: string;
+  }[];
 }
 
 function ApiSection({ title, description, endpoints }: ApiSectionProps) {
   return (
     <div>
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+      <Card className="mb-8 border-teal-100 shadow-md">
+        <CardHeader className="bg-gradient-to-r from-teal-50 to-blue-50 border-b border-teal-100">
+          <CardTitle className="text-teal-700">{title}</CardTitle>
+          <CardDescription className="text-blue-600">
+            {description}
+          </CardDescription>
         </CardHeader>
       </Card>
 
       {endpoints.map((endpoint, index) => (
-        <Card key={index} className="mb-6">
-          <CardHeader className="pb-3">
+        <Card
+          key={index}
+          className="mb-6 border-teal-100 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <CardHeader className="pb-3 bg-gradient-to-r from-teal-50 to-blue-50 border-b border-teal-100">
             <div className="flex items-center gap-3">
-              <Badge variant={getBadgeVariant(endpoint.method)}>{endpoint.method}</Badge>
-              <code className="text-sm font-mono bg-muted px-2 py-1 rounded">{endpoint.path}</code>
+              <Badge variant={getBadgeVariant(endpoint.method)}>
+                {endpoint.method}
+              </Badge>
+              <code className="text-sm font-mono bg-white/70 px-2 py-1 rounded border border-teal-100">
+                {endpoint.path}
+              </code>
             </div>
-            <CardDescription className="mt-2">{endpoint.description}</CardDescription>
+            <CardDescription className="mt-2 text-blue-600">
+              {endpoint.description}
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-white">
             <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="request">
-                <AccordionTrigger>Request Body</AccordionTrigger>
+              <AccordionItem value="request" className="border-teal-100">
+                <AccordionTrigger className="text-teal-700 hover:text-teal-800 hover:no-underline py-3">
+                  Request Body
+                </AccordionTrigger>
                 <AccordionContent>
-                  <ScrollArea className="h-[300px] rounded-md border p-4">
-                    <pre className="text-sm font-mono">{endpoint.requestBody}</pre>
+                  <ScrollArea className="h-[300px] rounded-md border border-teal-100 bg-teal-50/50">
+                    <pre className="text-sm font-mono p-4 text-blue-800">
+                      {endpoint.requestBody}
+                    </pre>
                   </ScrollArea>
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="response">
-                <AccordionTrigger>Response Body</AccordionTrigger>
+              <AccordionItem value="response" className="border-teal-100">
+                <AccordionTrigger className="text-teal-700 hover:text-teal-800 hover:no-underline py-3">
+                  Response Body
+                </AccordionTrigger>
                 <AccordionContent>
-                  <ScrollArea className="h-[300px] rounded-md border p-4">
-                    <pre className="text-sm font-mono">{endpoint.responseBody}</pre>
+                  <ScrollArea className="h-[300px] rounded-md border border-teal-100 bg-teal-50/50">
+                    <pre className="text-sm font-mono p-4 text-blue-800">
+                      {endpoint.responseBody}
+                    </pre>
                   </ScrollArea>
                 </AccordionContent>
               </AccordionItem>
@@ -611,20 +680,20 @@ function ApiSection({ title, description, endpoints }: ApiSectionProps) {
         </Card>
       ))}
     </div>
-  )
+  );
 }
 
 function getBadgeVariant(method: string) {
   switch (method) {
     case "GET":
-      return "default"
+      return "default";
     case "POST":
-      return "secondary"
+      return "secondary";
     case "PATCH":
-      return "outline"
+      return "outline";
     case "DELETE":
-      return "destructive"
+      return "destructive";
     default:
-      return "default"
+      return "default";
   }
 }

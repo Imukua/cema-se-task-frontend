@@ -20,16 +20,17 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Skip if still loading
     if (isLoading) return;
 
-    // If not authenticated and not on login or register page, redirect to login
-    if (
-      !isAuthenticated &&
-      !pathname?.includes("/login") &&
-      !pathname?.includes("/register")
-    ) {
+    // Define paths that are always accessible
+    const publicPaths = ["/login", "/register", "/api-docs"];
+    const isPublicPath = publicPaths.some((path) => pathname?.includes(path));
+
+    // If not authenticated and not on a public page, redirect to login
+    if (!isAuthenticated && !isPublicPath) {
       router.push("/login");
     }
 
     // If authenticated and on login or register page, redirect to dashboard
+    // We still want to allow authenticated users to see api-docs, so we exclude it here.
     if (
       isAuthenticated &&
       (pathname?.includes("/login") || pathname?.includes("/register"))
@@ -43,6 +44,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <PageSkeleton />;
   }
 
-  // For login and register pages, or if authenticated
+  // For public pages, or if authenticated
+  // The redirection logic in useEffect handles the protected routes
   return <>{children}</>;
 }
