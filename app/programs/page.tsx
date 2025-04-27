@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react"; // Import useRef
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,8 +37,8 @@ export default function ProgramsPage() {
   const [programs, setPrograms] = useState<HealthProgram[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // State for the input value
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState(""); // State for the debounced search term
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -47,57 +47,96 @@ export default function ProgramsPage() {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Debounce delay in milliseconds
+  const debounceDelay = 500; // Adjust as needed
+
+  // Use useRef to keep track of the debounce timeout ID
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to fetch programs based on applied search term
   const fetchPrograms = useCallback(async () => {
     setLoading(true);
     try {
+      // This function now uses appliedSearchTerm, which will be updated by the debounced effect
       const res: PaginatedResponse<HealthProgram> =
         await programApi.getPrograms(
           currentPage,
           itemsPerPage,
-          appliedSearchTerm,
+          appliedSearchTerm // Use the applied (debounced) search term
         );
 
       setPrograms(res.results);
       setTotalPages(res.totalPages);
     } catch (error) {
       console.error("Error fetching programs:", error);
+      // Optionally handle error state
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, appliedSearchTerm]);
+  }, [currentPage, itemsPerPage, appliedSearchTerm]); // Depend on appliedSearchTerm
 
+  // Effect to fetch programs when pagination or applied search term changes
   useEffect(() => {
     fetchPrograms();
-  }, [fetchPrograms]);
+  }, [fetchPrograms]); // Dependency on fetchPrograms which includes appliedSearchTerm
 
+  // Effect to debounce the search term and trigger program fetch
+  useEffect(() => {
+    // Clear the previous timeout if the search term changes before the delay
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set a new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      // Only update appliedSearchTerm (which triggers fetchPrograms) if the search term has changed
+      if (searchTerm !== appliedSearchTerm) {
+        setCurrentPage(1); // Reset pagination on new search
+        setAppliedSearchTerm(searchTerm);
+      }
+    }, debounceDelay);
+
+    // Cleanup the timeout when the component unmounts or searchTerm changes
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, debounceDelay, appliedSearchTerm]); // Depend on searchTerm and debounceDelay
+
+  // Frontend filtering for date
   const filteredPrograms = programs.filter((program) => {
+    // Date filter is still applied client-side on the currently fetched programs
     const matchesDate =
       !dateFilter || isSameDay(new Date(program.createdAt), dateFilter);
 
     return matchesDate;
   });
 
-  const handleApplySearch = () => {
-    setCurrentPage(1);
-    setAppliedSearchTerm(searchTerm);
-  };
+  // handleApplySearch button is removed, search is now automatic with debounce
 
   const handleApplyFilters = () => {
+    // Date filter application is now handled directly by setting dateFilter state
     setShowFilters(false);
+    // The change in dateFilter triggers the frontend filtering useEffect implicitly
   };
 
   const handlePageChange = (pageNumber: number) => {
     if (pageNumber < 1 || pageNumber > totalPages) return;
     setCurrentPage(pageNumber);
+    // Note: Pagination changes trigger fetchPrograms via the useEffect that depends on fetchPrograms.
   };
 
   const resetFilters = () => {
+    // Reset filter state
     setDateFilter(undefined);
+    // Reset search term states (this will trigger the debounce effect and fetchPrograms)
     setSearchTerm("");
     setAppliedSearchTerm("");
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset pagination
   };
 
+  // Use the frontend filtered list for display
   const displayPrograms = filteredPrograms;
 
   return (
@@ -109,18 +148,11 @@ export default function ProgramsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search programs by name or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchTerm} // Input is controlled by searchTerm
+                onChange={(e) => setSearchTerm(e.target.value)} // Update searchTerm on change
                 className="pl-9 bg-white border-gray-200 focus-visible:ring-teal-500 rounded-full flex-grow"
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleApplySearch}
-                className="ml-2 h-9 text-xs border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-full"
-              >
-                Search
-              </Button>
+              {/* Removed the Search button */}
             </div>
             <div className="flex gap-2">
               <Popover open={showFilters} onOpenChange={setShowFilters}>
@@ -133,7 +165,7 @@ export default function ProgramsPage() {
                     <Filter className="h-3.5 w-3.5" />
                     Filters
                     <Badge className="ml-1 bg-teal-100 text-teal-700 hover:bg-teal-200">
-                      {dateFilter ? 1 : 0}
+                      {dateFilter ? 1 : 0} {/* Count only the date filter */}
                     </Badge>
                   </Button>
                 </PopoverTrigger>
@@ -172,11 +204,30 @@ export default function ProgramsPage() {
                           <Calendar
                             mode="single"
                             selected={dateFilter}
-                            onSelect={setDateFilter}
+                            onSelect={(date) => {
+                              setDateFilter(date);
+                              setCurrentPage(1); // Reset pagination when date filter changes
+                              // Apply filter automatically when date is selected (optional, or use Apply Filters button)
+                              // handleApplyFilters(); // Uncomment this line if you want filter to apply on date selection
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
                       </Popover>
+                      {/* Added a button to clear the date filter if one is selected */}
+                      {dateFilter && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setDateFilter(undefined);
+                            setCurrentPage(1); // Reset pagination when removing date filter
+                          }}
+                          className="h-6 text-xs text-gray-500 hover:text-gray-700 px-2"
+                        >
+                          Clear Date
+                        </Button>
+                      )}
                     </div>
 
                     <div className="flex justify-between pt-2">
@@ -190,7 +241,7 @@ export default function ProgramsPage() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={handleApplyFilters}
+                        onClick={handleApplyFilters} // This button still applies filters if not using auto-apply on date select
                         className="text-xs h-8 bg-teal-600 hover:bg-teal-700"
                       >
                         Apply Filters
@@ -223,9 +274,9 @@ export default function ProgramsPage() {
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => {
-                      setSearchTerm("");
-                      setAppliedSearchTerm("");
-                      setCurrentPage(1);
+                      setSearchTerm(""); // Clear input value
+                      setAppliedSearchTerm(""); // Clear applied search term (triggers fetch)
+                      setCurrentPage(1); // Reset pagination
                     }}
                   />
                 </Badge>
@@ -238,7 +289,10 @@ export default function ProgramsPage() {
                   Created Date: {format(dateFilter, "PP")}
                   <X
                     className="h-3 w-3 cursor-pointer"
-                    onClick={() => setDateFilter(undefined)}
+                    onClick={() => {
+                      setDateFilter(undefined);
+                      setCurrentPage(1); // Reset pagination
+                    }}
                   />
                 </Badge>
               )}
@@ -264,7 +318,11 @@ export default function ProgramsPage() {
             <CardTitle className="text-lg font-medium text-gray-700">
               Programs
               <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">
-                {filteredPrograms.length}
+                {loading ? (
+                  <Skeleton className="h-4 w-10" />
+                ) : (
+                  filteredPrograms.length
+                )}
               </Badge>
             </CardTitle>
           </div>
@@ -279,10 +337,14 @@ export default function ProgramsPage() {
                 </div>
               ))}
             </div>
+          ) : displayPrograms.length === 0 &&
+            (appliedSearchTerm !== "" || dateFilter !== undefined) ? (
+            <div className="text-center py-8 text-gray-500">
+              No programs found matching your search or filter criteria.
+            </div>
           ) : displayPrograms.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No programs found matching the criteria. Try adjusting your search
-              or filters.
+              No programs available. Add a new program to get started.
             </div>
           ) : (
             <>
@@ -305,45 +367,33 @@ export default function ProgramsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPrograms.length > 0 ? (
-                      filteredPrograms.map((program) => (
-                        <TableRow
-                          key={program.id}
-                          className="hover:bg-gray-50/80 border-b border-gray-100"
-                        >
-                          <TableCell className="font-medium text-teal-700">
-                            {program.name}
-                          </TableCell>
-                          <TableCell className="max-w-md truncate">
-                            {program.description || "No description available"}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(program.createdAt).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Link href={`/programs/${program.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
-                              >
-                                View Details
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-center py-8 text-gray-500"
-                        >
-                          No programs found. Try adjusting your search or
-                          filters.
+                    {displayPrograms.map((program) => (
+                      <TableRow
+                        key={program.id}
+                        className="hover:bg-gray-50/80 border-b border-gray-100"
+                      >
+                        <TableCell className="font-medium text-teal-700">
+                          {program.name}
+                        </TableCell>
+                        <TableCell className="max-w-md truncate">
+                          {program.description || "No description available"}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(program.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/programs/${program.id}`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
+                            >
+                              View Details
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -375,7 +425,7 @@ export default function ProgramsPage() {
                         >
                           {page}
                         </Button>
-                      ),
+                      )
                     )}
                     <Button
                       variant="outline"

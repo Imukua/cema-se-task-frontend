@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react"; // Import useRef
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { calculateAge } from "@/lib/utils";
-import { mockPrograms } from "@/lib/mock-data";
+// import { mockPrograms } from "@/lib/mock-data"; // Assuming this is not needed for fetching programs via API
 import {
   Select,
   SelectContent,
@@ -38,8 +38,8 @@ import { programApi } from "@/lib/api/programApi";
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // State for the input value
+  const [appliedSearchTerm, setAppliedSearchTerm] = useState(""); // State for the debounced search term
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -63,25 +63,34 @@ export default function ClientsPage() {
   const [programFilter, setProgramFilter] = useState<string | null>(null);
   const [programs, setPrograms] = useState<HealthProgram[]>([]);
 
+  // Debounce delay in milliseconds
+  const debounceDelay = 500; // Adjust as needed
+
+  // Use useRef to keep track of the debounce timeout ID
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to fetch clients based on applied filters and search term
   const fetchClients = useCallback(async () => {
     setLoading(true);
     try {
+      // This function now uses appliedSearchTerm, which will be updated by the debounced effect
       const res: PaginatedResponse<Client> = await clientApi.getClients(
         currentPage,
         itemsPerPage,
-        appliedSearchTerm,
+        appliedSearchTerm, // Use the applied (debounced) search term
         appliedGenderFilter?.toLowerCase(),
-        undefined,
+        undefined // Assuming no other server-side filters like age or program
       );
 
       setClients(res.results);
       setTotalPages(res.totalPages);
     } catch (error) {
       console.error("Error loading clients:", error);
+      // Optionally handle error state
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, appliedSearchTerm, appliedGenderFilter]);
+  }, [currentPage, itemsPerPage, appliedSearchTerm, appliedGenderFilter]); // Depend on appliedSearchTerm
 
   const fetchPrograms = useCallback(async () => {
     try {
@@ -92,47 +101,80 @@ export default function ClientsPage() {
     }
   }, []);
 
+  // Effect to fetch clients when pagination, applied search term, or applied gender filter changes
   useEffect(() => {
     fetchClients();
-    fetchPrograms();
-  }, [fetchClients, fetchPrograms]);
+  }, [fetchClients]); // Dependency on fetchClients which includes appliedSearchTerm and appliedGenderFilter
 
+  // Effect to fetch programs on mount
+  useEffect(() => {
+    fetchPrograms();
+  }, [fetchPrograms]);
+
+  // Effect to debounce the search term and trigger client fetch
+  useEffect(() => {
+    // Clear the previous timeout if the search term changes before the delay
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set a new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      // Only update appliedSearchTerm (which triggers fetchClients) if the search term is not empty
+      // or if it was previously not empty and is now empty (to clear results)
+      if (searchTerm !== appliedSearchTerm) {
+        setCurrentPage(1); // Reset pagination on new search
+        setAppliedSearchTerm(searchTerm);
+      }
+    }, debounceDelay);
+
+    // Cleanup the timeout when the component unmounts or searchTerm changes
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, debounceDelay, appliedSearchTerm]); // Depend on searchTerm and debounceDelay
+
+  // Effect for frontend filtering (age and program are filtered client-side based on the fetched data)
   useEffect(() => {
     const filtered = clients.filter((client) => {
       const age = calculateAge(client.dob);
       const matchesAge = age >= ageRange[0] && age <= ageRange[1];
 
       const matchesProgram =
-        !appliedProgramFilter ||
-        (client.programs &&
+        !appliedProgramFilter || // If no program filter is applied
+        (client.programs && // If client has programs
           client.programs.some(
-            (enrollment: any) => enrollment.programId === appliedProgramFilter,
+            // Check if any of the client's programs match the filter
+            (enrollment: any) => enrollment.programId === appliedProgramFilter
           ));
 
       return matchesAge && matchesProgram;
     });
     setFrontendFilteredClients(filtered);
-  }, [clients, ageRange, appliedProgramFilter]);
+    // Note: Pagination is handled by the backend fetchClients, frontend filtering happens on the current page's data
+    // If you want frontend filtering to affect pagination, you would need to fetch ALL clients first,
+    // which might not be performant for large datasets. The current approach filters the clients fetched for the *current page*.
+  }, [clients, ageRange, appliedProgramFilter]); // Depend on clients, ageRange, and appliedProgramFilter
 
-  const handleApplySearch = () => {
-    setCurrentPage(1);
-    setAppliedSearchTerm(searchTerm);
-  };
+  // handleApplySearch button is removed, search is now automatic with debounce
 
   const handleApplyFilters = () => {
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset pagination when filters are applied
     setAppliedGenderFilter(
       genderFilter === null || genderFilter === "" || genderFilter === "all"
         ? undefined
-        : genderFilter,
+        : genderFilter
     );
     setAppliedProgramFilter(
       programFilter === null || programFilter === "" || programFilter === "all"
         ? undefined
-        : programFilter,
+        : programFilter
     );
 
     setShowFilters(false);
+    // The change in appliedGenderFilter and appliedProgramFilter will trigger fetchClients via useEffect
   };
 
   const handlePageChange = (pageNumber: number) => {
@@ -141,16 +183,17 @@ export default function ClientsPage() {
   };
 
   const resetFilters = () => {
+    // Reset filter states
     setGenderFilter(null);
     setAgeRange([0, 100]);
     setProgramFilter(null);
-
+    // Reset applied filter states (this will trigger fetchClients)
     setAppliedGenderFilter(undefined);
     setAppliedProgramFilter(undefined);
-    setAppliedSearchTerm("");
+    // Reset search term (this will trigger the debounce effect)
     setSearchTerm("");
-
-    setCurrentPage(1);
+    setAppliedSearchTerm(""); // Directly reset applied search term to ensure immediate effect
+    setCurrentPage(1); // Reset pagination
   };
 
   const handleAgeRangeChange = (value: number[]) => {
@@ -165,7 +208,7 @@ export default function ClientsPage() {
     setProgramFilter(value);
   };
 
-  const displayClients = frontendFilteredClients;
+  const displayClients = frontendFilteredClients; // Display the frontend filtered clients
 
   return (
     <div className="space-y-4">
@@ -176,18 +219,11 @@ export default function ClientsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search clients by name or contact..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchTerm} // Input is controlled by searchTerm
+                onChange={(e) => setSearchTerm(e.target.value)} // Update searchTerm on change
                 className="pl-9 bg-white border-gray-200 focus-visible:ring-teal-500 rounded-full flex-grow"
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleApplySearch}
-                className="ml-2 h-9 text-xs border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-full"
-              >
-                Search
-              </Button>
+              {/* Removed the Search button */}
             </div>
             <div className="flex gap-2">
               <Popover open={showFilters} onOpenChange={setShowFilters}>
@@ -331,7 +367,7 @@ export default function ClientsPage() {
                     onClick={() => {
                       setAppliedGenderFilter(undefined);
                       setGenderFilter(null);
-                      setCurrentPage(1);
+                      setCurrentPage(1); // Reset pagination when removing a filter
                     }}
                   />
                 </Badge>
@@ -363,7 +399,7 @@ export default function ClientsPage() {
                     onClick={() => {
                       setAppliedProgramFilter(undefined);
                       setProgramFilter(null);
-                      setCurrentPage(1);
+                      setCurrentPage(1); // Reset pagination when removing a filter
                     }}
                   />
                 </Badge>
@@ -393,7 +429,11 @@ export default function ClientsPage() {
             <CardTitle className="text-lg font-medium text-gray-700">
               Clients
               <Badge className="ml-2 bg-gray-100 text-gray-600 font-normal">
-                {frontendFilteredClients.length}
+                {loading ? (
+                  <Skeleton className="h-4 w-10" />
+                ) : (
+                  frontendFilteredClients.length
+                )}
               </Badge>
             </CardTitle>
           </div>
@@ -411,10 +451,18 @@ export default function ClientsPage() {
                 </div>
               ))}
             </div>
+          ) : displayClients.length === 0 &&
+            (appliedSearchTerm !== "" ||
+              appliedGenderFilter !== undefined ||
+              appliedProgramFilter !== undefined ||
+              ageRange[0] > 0 ||
+              ageRange[1] < 100) ? (
+            <div className="text-center py-8 text-gray-500">
+              No clients found matching your search or filter criteria.
+            </div>
           ) : displayClients.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No clients found matching the criteria. Try adjusting your search
-              or filters.
+              No clients available. Add a new client to get started.
             </div>
           ) : (
             <>
@@ -514,7 +562,7 @@ export default function ClientsPage() {
                         >
                           {page}
                         </Button>
-                      ),
+                      )
                     )}
                     <Button
                       variant="outline"
