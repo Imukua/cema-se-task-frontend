@@ -84,6 +84,7 @@ const config = {
           900: "#1e3a8a",
           950: "#172554",
         },
+        success: "#2DD881",
       },
       borderRadius: {
         lg: "var(--radius)",
